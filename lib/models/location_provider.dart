@@ -17,6 +17,8 @@ class LocationProvider extends ChangeNotifier {
     speed: 0,
     speedAccuracy: 0,
   );
+  bool _serviceEnabled = true;
+  bool get serviceEnabled => _serviceEnabled;
   LocationProvider() {
     determinePosition();
   }
@@ -26,6 +28,8 @@ class LocationProvider extends ChangeNotifier {
 
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
+      _serviceEnabled = false;
+      notifyListeners();
       Fluttertoast.showToast(
           msg: "Location services are disabled.",
           toastLength: Toast.LENGTH_LONG,
@@ -55,6 +59,8 @@ class LocationProvider extends ChangeNotifier {
       return Future.error(
           'Location permissions are permanently denied, we cannot request permissions.');
     }
+    _serviceEnabled = true;
+    notifyListeners();
     Position? position = await Geolocator.getCurrentPosition();
     _currentLocation = position;
     print(currentLocation.latitude);

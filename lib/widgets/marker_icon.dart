@@ -4,39 +4,45 @@ import 'package:parking_app/models/parkingspotsnotifier.dart';
 import 'package:parking_app/models/vehicle_provider.dart';
 import 'package:provider/provider.dart';
 
-class MarkerIcon extends StatelessWidget {
+class MarkerIcon extends StatefulWidget {
   const MarkerIcon({super.key, required this.spot});
   final ParkingSpot spot;
 
+  @override
+  State<MarkerIcon> createState() => _MarkerIconState();
+}
+
+class _MarkerIconState extends State<MarkerIcon> {
   @override
   Widget build(BuildContext context) {
     return Consumer<VehicleProvider>(
         builder: (context, vehicleProvider, child) {
       return Consumer<ParkingSpotsNotifier>(
           builder: (context, notifier, child) {
-        var updatedSpot = notifier.parkingSpots
-            .firstWhere((spot) => spot.name == spot.name, orElse: () => spot);
-        Color iconColor;
+        var updatedSpot = notifier.parkingSpots.firstWhere(
+            (spot) => spot.name == spot.name,
+            orElse: () => widget.spot);
+        Color? textcolor;
         if (vehicleProvider.selectedVehicle == 'car') {
-          if (updatedSpot.freeCarSlots < 6 && updatedSpot.freeCarSlots >= 3)
-            iconColor = Colors.orange;
-          else if (updatedSpot.freeCarSlots < 3) {
-            iconColor = Colors.red;
+          if (updatedSpot.freeCarSlots < 6 && updatedSpot.freeCarSlots >= 3) {
+            textcolor = Colors.orange;
+          } else if (updatedSpot.freeCarSlots < 3) {
+            textcolor = Colors.red;
           } else {
-            iconColor = Colors.green;
+            textcolor = Colors.green;
           }
         } else {
-          if (updatedSpot.freeBikeSlots < 6 && updatedSpot.freeBikeSlots >= 3)
-            iconColor = Colors.orange;
-          else if (updatedSpot.freeBikeSlots < 3) {
-            iconColor = Colors.red;
+          if (updatedSpot.freeBikeSlots < 6 && updatedSpot.freeBikeSlots >= 3) {
+            textcolor = Colors.orange;
+          } else if (updatedSpot.freeBikeSlots < 3) {
+            textcolor = Colors.red;
           } else {
-            iconColor = Colors.green;
+            textcolor = Colors.green;
           }
         }
         return Icon(
           Icons.local_parking_sharp,
-          color: iconColor,
+          color: textcolor,
           size: 30,
         );
       });

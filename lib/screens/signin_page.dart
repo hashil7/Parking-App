@@ -49,7 +49,10 @@ class _SigninPageState extends State<SigninPage> {
                       await firestore
                           .collection('users')
                           .doc(AuthService.user!.uid)
-                          .set({});
+                          .set({
+                        'walletBalance': 0,
+                        'secondScan': false,
+                      });
                     }
                     Navigator.pushReplacement(
                       context,

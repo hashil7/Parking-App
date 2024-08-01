@@ -39,15 +39,22 @@ Future<void> fetchInitialParkingSpots(
     onstreetSpots.clear();
     onstreetvalue.forEach(
       (key, values) {
+        var images = List<String>.from(values['image']);
+        var carSlots = values['car'] as List<dynamic>;
+        var bikeSlots = values['bike'] as List<dynamic>;
+
+        int freeCarSlots = carSlots.fold(0, (sum, item) => sum + item as int);
+        int freeBikeSlots = bikeSlots.fold(0, (sum, item) => sum + item as int);
         onstreetSpots.add(
           ParkingSpot(
               name: key,
               address: values['address'],
               latitude: values['lat'],
               longitude: values['long'],
-              freeCarSlots: values['car'],
-              freeBikeSlots: values['bike'],
-              locationImage: values['image'],
+              freeCarSlots: freeCarSlots,
+              freeBikeSlots: freeBikeSlots,
+              locationImage: images,
+              avgFillingTime: values['fillingTime'],
               type: 'onstreet'),
         );
       },
@@ -58,6 +65,8 @@ Future<void> fetchInitialParkingSpots(
     bookingSpots.clear();
     bookingvalue.forEach(
       (key, values) {
+        var images = List<String>.from(values['image']);
+
         bookingSpots.add(
           ParkingSpot(
             name: key,
@@ -66,7 +75,7 @@ Future<void> fetchInitialParkingSpots(
             longitude: values['long'],
             freeCarSlots: values['car'],
             freeBikeSlots: values['bike'],
-            locationImage: values['image'],
+            locationImage: images,
             type: 'booking',
             price: values['price'],
           ),
@@ -83,14 +92,21 @@ void listenForParkingSpotChanges(ParkingSpotsNotifier notifier) {
     var values = event.snapshot.value as Map<dynamic, dynamic>;
 
     if (key != null) {
+      var images = List<String>.from(values['image']);
+      var carSlots = values['car'] as List<dynamic>;
+      var bikeSlots = values['bike'] as List<dynamic>;
+
+      int freeCarSlots = carSlots.fold(0, (sum, item) => sum + item as int);
+      int freeBikeSlots = bikeSlots.fold(0, (sum, item) => sum + item as int);
       ParkingSpot updatedSpot = ParkingSpot(
         name: key,
         address: values['address'],
         latitude: values['lat'],
         longitude: values['long'],
-        freeCarSlots: values['car'],
-        freeBikeSlots: values['bike'],
-        locationImage: values['image'],
+        freeCarSlots: freeCarSlots,
+        freeBikeSlots: freeBikeSlots,
+        locationImage: images,
+        avgFillingTime: values['fillingTime'],
         type: 'onstreet', // Use a default image
       );
       notifier.updateSpot(updatedSpot);
@@ -101,6 +117,8 @@ void listenForParkingSpotChanges(ParkingSpotsNotifier notifier) {
     var values = event.snapshot.value as Map<dynamic, dynamic>;
 
     if (key != null) {
+      var images = List<String>.from(values['image']);
+
       ParkingSpot updatedSpot = ParkingSpot(
         name: key,
         address: values['address'],
@@ -108,7 +126,7 @@ void listenForParkingSpotChanges(ParkingSpotsNotifier notifier) {
         longitude: values['long'],
         freeCarSlots: values['car'],
         freeBikeSlots: values['bike'],
-        locationImage: values['image'],
+        locationImage: images,
         type: 'booking',
         price: values['price'],
       );
@@ -119,14 +137,22 @@ void listenForParkingSpotChanges(ParkingSpotsNotifier notifier) {
     var key = event.snapshot.key;
     var values = event.snapshot.value as Map<dynamic, dynamic>;
     if (key != null) {
+      var images = List<String>.from(values['image']);
+      var carSlots = values['car'] as List<dynamic>;
+      var bikeSlots = values['bike'] as List<dynamic>;
+
+      int freeCarSlots = carSlots.fold(0, (sum, item) => sum + item as int);
+      int freeBikeSlots = bikeSlots.fold(0, (sum, item) => sum + item as int);
       ParkingSpot newSpot = ParkingSpot(
         name: key,
         address: values['address'],
         latitude: values['lat'],
         longitude: values['long'],
-        freeCarSlots: values['car'],
-        freeBikeSlots: values['bike'],
-        locationImage: values['image'], type: 'onStreet',
+        freeCarSlots: freeCarSlots,
+        freeBikeSlots: freeBikeSlots,
+        locationImage: images,
+        avgFillingTime: values['fillingTime'],
+        type: 'onStreet',
         // Use a default image
       );
       notifier.addSpot(newSpot);
@@ -136,6 +162,8 @@ void listenForParkingSpotChanges(ParkingSpotsNotifier notifier) {
     var key = event.snapshot.key;
     var values = event.snapshot.value as Map<dynamic, dynamic>;
     if (key != null) {
+      var images = List<String>.from(values['image']);
+
       ParkingSpot newSpot = ParkingSpot(
         name: key,
         address: values['address'],
@@ -143,7 +171,7 @@ void listenForParkingSpotChanges(ParkingSpotsNotifier notifier) {
         longitude: values['long'],
         freeCarSlots: values['car'],
         freeBikeSlots: values['bike'],
-        locationImage: values['image'], type: 'booking',
+        locationImage: images, type: 'booking',
         price: values['price'],
         // Use a default image
       );

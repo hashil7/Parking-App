@@ -41,7 +41,7 @@ class _TypeWriterState extends State<TypeWriter> {
       widget.text.substring(0, _currentIndex),
       style: TextStyle(
           fontStyle: FontStyle.italic,
-          fontSize: 50,
+          fontSize: MediaQuery.of(context).size.height * 0.06,
           fontWeight: FontWeight.bold,
           color: Color.fromARGB(92, 255, 255, 255)),
     );

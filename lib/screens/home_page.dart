@@ -13,10 +13,10 @@ import 'package:parking_app/models/location_provider.dart';
 import 'package:parking_app/models/parkingspotsnotifier.dart';
 import 'package:parking_app/models/vehicle_provider.dart';
 
-import 'package:parking_app/widgets/booking_sheet.dart';
-
 import 'package:parking_app/models/parking_spot.dart';
+import 'package:parking_app/widgets/booking_sheet.dart';
 import 'package:parking_app/widgets/marker_icon.dart';
+import 'package:parking_app/widgets/spot_details.dart';
 
 import 'package:provider/provider.dart';
 
@@ -41,9 +41,9 @@ class _HomePageState extends State<HomePage> {
         isScrollControlled: true,
         context: context,
         builder: (BuildContext context) {
-          return BookingSheet(
-            space: p_spot,
-          );
+          return p_spot.type == 'booking'
+              ? BookingSheet(space: p_spot)
+              : SpotDetails(p_spot: p_spot, onTap: () {});
           // return Provider.of<BookingTimerProvider>(context, listen: false)
           //         .booked
           //     ? CustomSheet(
@@ -153,8 +153,6 @@ class _HomePageState extends State<HomePage> {
                     options: MapOptions(
                       initialCenter: LatLng(11.2588, 75.7804),
                       initialZoom: 13.0,
-                      interactionOptions: InteractionOptions(
-                          flags: ~InteractiveFlag.doubleTapZoom),
                     ),
                     children: [
                       openStreetMapTileLayer,

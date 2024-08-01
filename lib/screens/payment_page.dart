@@ -46,6 +46,7 @@ class _PaymentPageState extends State<PaymentPage> {
   @override
   Widget build(BuildContext context) {
     return Consumer<BookingTimerProvider>(builder: (context, notifier, child) {
+      amount = notifier.timeParked.inSeconds * 0.01111;
       return Scaffold(
           body: Container(
         color: Colors.amber[20],
@@ -74,13 +75,6 @@ class _PaymentPageState extends State<PaymentPage> {
                   : "Vehicle Parked at ${(notifier.parkedTime!.hour).toString().padLeft(2, "0")}:${(notifier.parkedTime!.minute).toString().padLeft(2, "0")}",
               style: TextStyle(
                 fontSize: 20,
-              ),
-            ),
-            ElevatedButton(
-              onPressed: get_parkingtime,
-              child: Text(
-                'Get Parking Duration',
-                style: TextStyle(fontSize: 16),
               ),
             ),
             ParkedTime(),

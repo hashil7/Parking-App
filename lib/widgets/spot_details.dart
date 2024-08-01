@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
 import 'package:google_fonts/google_fonts.dart';
+import 'package:latlong2/latlong.dart';
 
 import 'package:map_launcher/map_launcher.dart';
 import 'package:parking_app/constants.dart';
@@ -17,6 +20,8 @@ import 'package:parking_app/services/notification_service.dart';
 import 'package:parking_app/services/sp_repository.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class SpotDetails extends StatefulWidget {
   SpotDetails({super.key, required this.p_spot, required this.onTap});
@@ -28,10 +33,13 @@ class SpotDetails extends StatefulWidget {
 }
 
 class _SpotDetailsState extends State<SpotDetails> with WidgetsBindingObserver {
+  int _currentIndex = 0;
+  Timer? _imageTimer;
+  int avgFillingTime = 360;
   Razorpay razorpay = Razorpay();
   openMapsSheet() async {
     final coords = Coords(widget.p_spot.latitude, widget.p_spot.longitude);
-    final title = widget.p_spot.name;
+
     if (await MapLauncher.isMapAvailable(MapType.google) != null) {
       await MapLauncher.showDirections(
         // origin: origin,
@@ -41,15 +49,44 @@ class _SpotDetailsState extends State<SpotDetails> with WidgetsBindingObserver {
     }
   }
 
+  Future<int> fetchDuration(LatLng origin, LatLng desti) async {
+    final url = Uri.parse(
+        'https://api.olamaps.io/routing/v1/directions?origin=${origin.latitude}%2C${origin.longitude}&destination=${desti.latitude}%2C${desti.longitude}&alternatives=false&steps=true&overview=full&language=en&traffic_metadata=false&api_key=tD8OsZ5JZnBryze66bMaJ8hmF63W5YHzbWR3Yd4k');
+
+    final response = await http.post(
+      url,
+      headers: {
+        'accept': 'application/json',
+        'Authorization':
+            'Bearer eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJMRndtX0U2akoyWG5yYkpkS1d1VXl2UllUN25lZ0FibDhWLXVSTno3UzZVIn0.eyJleHAiOjE3MjA5NTU4NTksImlhdCI6MTcyMDk1MjI1OSwianRpIjoiMmNlMzJhOWEtYjFmOC00OGYwLWI3NTYtNDM1NjFmYWNiMzUyIiwiaXNzIjoiaHR0cHM6Ly9hY2NvdW50Lm9sYW1hcHMuaW8vcmVhbG1zL29sYW1hcHMiLCJzdWIiOiJjM2E4MzkxOC00Y2RmLTRkYWUtYWQ3ZC1jN2Q4ZTNiNjQwNjMiLCJ0eXAiOiJCZWFyZXIiLCJhenAiOiI4YWM1NzlhMS0yNWQ3LTRiMzktOTU0YS1iNDQxNTg4YWE0ZWUiLCJhY3IiOiIxIiwiYWxsb3dlZC1vcmlnaW5zIjpbIioiXSwicmVhbG1fYWNjZXNzIjp7InJvbGVzIjpbIlNCTi0wMmRmZjM1OC1kOGNiLTQ2NDgtYjgxZi1jY2NhNTQzNjkyYTUiLCJkZWZhdWx0LXJvbGVzLW9sYW1hcHMiLCJPUkctRHNocmJCVUZtcyJdfSwic2NvcGUiOiJvcGVuaWQgcHJvZmlsZSBlbWFpbCIsImVtYWlsX3ZlcmlmaWVkIjpmYWxzZSwiY2xpZW50SG9zdCI6IjEwLjM3LjkuNzciLCJvcmciOiJPUkctRHNocmJCVUZtcyIsIm9yZzEiOnt9LCJyZWFsbSI6Im9sYW1hcHMiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJzZXJ2aWNlLWFjY291bnQtOGFjNTc5YTEtMjVkNy00YjM5LTk1NGEtYjQ0MTU4OGFhNGVlIiwiY2xpZW50QWRkcmVzcyI6IjEwLjM3LjkuNzciLCJjbGllbnRfaWQiOiI4YWM1NzlhMS0yNWQ3LTRiMzktOTU0YS1iNDQxNTg4YWE0ZWUiLCJzYm4iOiJTQk4tMDJkZmYzNTgtZDhjYi00NjQ4LWI4MWYtY2NjYTU0MzY5MmE1In0.gHhio3FjWnL0xLUd9OhgsMDIfe3qj0ujloVTPDvIuwG6BRFx8wllKRFxJ-UNxfoDZ01dTkLkAsWaZEfb0gxWckBZO41yYv62fSi8THjmLpKzku8r1Lpc8trWJHT-ca0Opl9VnGmjADTMw95pNGNTPLRZ_pNt4PPnmTwLtwq_t6EsDt16liEX3dANIDCtvv7EkFAxyogDHNvvsgnNEe_SlKggUEnyFs8kYafSrc_mYdcB5rUFAFXPrnQ7RRpnTYPT1GXhC1uSQV8QL2o4yzZG7SFI7HH-Azs37ytTwnyDfeT7N6unegvYjJ---vdtQXJWQ3gxq0eW0tj-iBS0h5dxnA',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body);
+      final duration = json['routes'][0]['legs'][0]['duration'];
+      print(duration);
+      return duration;
+    } else {
+      throw Exception('Failed to load duration');
+    }
+  }
+
   Coords origin = Coords(0, 0);
 
   DateTime? deadline;
-
+  double? probability;
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _imageTimer = Timer.periodic(Duration(seconds: 10), (timer) {
+      setState(() {
+        _currentIndex =
+            (_currentIndex + 1) % (widget.p_spot.locationImage.length);
+      });
+    });
   }
 
   @override
@@ -138,7 +175,7 @@ class _SpotDetailsState extends State<SpotDetails> with WidgetsBindingObserver {
           }
           return Container(
             width: MediaQuery.of(context).size.width * 1,
-            height: MediaQuery.of(context).size.height * 0.45,
+            height: MediaQuery.of(context).size.height * 0.47,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(30),
               color: Colors.white,
@@ -188,7 +225,7 @@ class _SpotDetailsState extends State<SpotDetails> with WidgetsBindingObserver {
                     width: MediaQuery.of(context).size.width,
                     height: MediaQuery.of(context).size.height * 0.23,
                     child: Image.network(
-                      updatedSpot.locationImage,
+                      updatedSpot.locationImage[_currentIndex],
                       fit: BoxFit.cover,
                       loadingBuilder: (BuildContext context, Widget child,
                           ImageChunkEvent? loadingProgress) {
@@ -234,11 +271,6 @@ class _SpotDetailsState extends State<SpotDetails> with WidgetsBindingObserver {
                       Spacer(),
                       IconButton(
                         onPressed: () {
-                          // locationProvider.determinePosition();
-                          // origin = Coords(
-                          //   locationProvider.currentLocation.latitude,
-                          //   locationProvider.currentLocation.longitude,
-                          // );
                           Provider.of<NavcheckProvider>(context, listen: false)
                               .isNavigating = true;
                           openMapsSheet();
@@ -294,12 +326,118 @@ class _SpotDetailsState extends State<SpotDetails> with WidgetsBindingObserver {
                             ),
                           ),
                         )
-                      : SizedBox()
+                      : ElevatedButton(
+                          onPressed: () async {
+                            locationProvider.determinePosition();
+                            if (locationProvider.serviceEnabled == false) {
+                              Fluttertoast.showToast(
+                                msg: 'Please Enable Location Services',
+                                gravity: ToastGravity.TOP,
+                                backgroundColor: backgroundColor,
+                                textColor: Colors.white,
+                              );
+
+                              return;
+                            }
+                            int duration = await fetchDuration(
+                                LatLng(
+                                    locationProvider.currentLocation.latitude,
+                                    locationProvider.currentLocation.longitude),
+                                LatLng(widget.p_spot.latitude,
+                                    widget.p_spot.longitude));
+
+                            int currentSpots =
+                                vehicleProvider.selectedVehicle == 'car'
+                                    ? updatedSpot.freeCarSlots
+                                    : updatedSpot.freeBikeSlots;
+                            avgFillingTime =
+                                widget.p_spot.avgFillingTime ?? 360;
+                            probability =
+                                (avgFillingTime * currentSpots * 100) /
+                                    duration;
+
+                            showDialog(
+                                context: context,
+                                builder: (context) {
+                                  return AlertDialog(
+                                    content: _probability(probability!),
+                                  );
+                                });
+                          },
+                          child: Text('Predict Availability',
+                              style: TextStyle(color: Colors.white)),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: backgroundColor,
+                          ),
+                        )
                 ]),
           );
         });
       });
     });
+  }
+
+  Widget _probability(double probability) {
+    probability = probability.clamp(0, 99);
+    String prob = probability.toStringAsFixed(0);
+    late Color probColor;
+    if (probability < 20) {
+      probColor = Colors.redAccent;
+    } else if (probability < 70) {
+      probColor = Colors.orange;
+    } else {
+      probColor = Colors.green;
+    }
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.2,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          Text(
+            'Availability Prediction',
+            style: GoogleFonts.saira(
+                color: Color(0xFF333E63),
+                fontWeight: FontWeight.bold,
+                fontSize: 20),
+          ),
+          Text.rich(
+            textAlign: TextAlign.center,
+            TextSpan(
+              children: [
+                TextSpan(text: 'There is '),
+                TextSpan(
+                  text: '${prob}%',
+                  style: TextStyle(color: probColor),
+                ),
+                TextSpan(text: ' chance of finding a free spot'),
+              ],
+              style: TextStyle(
+                color: Color(0xFF6E819B),
+                fontSize: 15,
+              ),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Text(
+                'OK',
+                style: TextStyle(color: Colors.white, fontSize: 18),
+              ),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: backgroundColor,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+          )
+        ],
+      ),
+    );
   }
 
   void handlePaymentSuccess() async {
@@ -309,15 +447,6 @@ class _SpotDetailsState extends State<SpotDetails> with WidgetsBindingObserver {
     FirebaseFirestore firestore = FirebaseFirestore.instance;
     DateTime bookingTime =
         DateTime.timestamp().add(Duration(hours: 5, minutes: 30));
-
-    // Provider.of<BookingTimerProvider>(context, listen: false)
-    //     .saveBookingTimetoFirebase();
-    // try {
-    //   await saveBookingTime(bookingTime);
-    //   print('Successfully Saved');
-    // } catch (e) {
-    //   print('Shared Pref error: $e');
-    // }
 
     try {
       print('Saving to firebase');

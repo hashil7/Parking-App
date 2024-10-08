@@ -1,6 +1,6 @@
 # parking_app
 
-A new Flutter project.
+Screen Recording: https://github.com/user-attachments/assets/9d03673f-807e-40b5-86d4-665f1dbecc73
 
 ## Getting Started
 

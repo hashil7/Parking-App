@@ -8,12 +8,10 @@ import 'package:geolocator/geolocator.dart';
 import 'package:parking_app/constants.dart';
 import 'package:parking_app/models/bookingtimer_provider.dart';
 import 'package:parking_app/models/location_provider.dart';
-import 'package:parking_app/models/parking_spot.dart';
 
 import 'package:parking_app/screens/main_page.dart';
 import 'package:parking_app/screens/signin_page.dart';
 import 'package:parking_app/services/auth_service.dart';
-import 'package:parking_app/widgets/spot_details.dart';
 import 'package:parking_app/widgets/type_writer.dart';
 import 'package:provider/provider.dart';
 

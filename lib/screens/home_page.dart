@@ -51,15 +51,16 @@ class _HomePageState extends State<HomePage> {
   Marker? searchlocMarker;
 
   ParkingSpot? _current_booking;
-  void openBottomSheet(BuildContext context, ParkingSpot pSpot) {
+  ParkingSpot? _nearestSpot; // New member to store the nearest parking spot
+  void openBottomSheet(BuildContext context, ParkingSpot p_spot) {
     if (mounted) {
       showModalBottomSheet(
         isScrollControlled: true,
         context: context,
         builder: (BuildContext context) {
-          return pSpot.type == 'booking'
-              ? BookingSheet(space: pSpot)
-              : SpotDetails(p_spot: pSpot, onTap: () {});
+          return p_spot.type == 'booking'
+              ? BookingSheet(space: p_spot)
+              : SpotDetails(p_spot: p_spot, onTap: () {});
           // return Provider.of<BookingTimerProvider>(context, listen: false)
           //         .booked
           //     ? CustomSheet(
@@ -197,7 +198,7 @@ class _HomePageState extends State<HomePage> {
     print('Is in On-Street Area: $_isInOnStreetArea');
 
     final elapsed = DateTime.now().difference(_entryTime!);
-    if (elapsed.inSeconds >= 5) {
+    if (elapsed.inMinutes >= 1) {
       final locationProvider =
           Provider.of<LocationProvider>(context, listen: false);
       final userPosition = locationProvider.currentLocation;
@@ -212,19 +213,34 @@ class _HomePageState extends State<HomePage> {
           spot.latitude,
           spot.longitude,
         );
-        return distance <= 30; // 10 meters
+        return distance <= 2000; // 10 meters
       }).toList();
 
       print('Number of nearby spots found: ${nearbySpots.length}');
 
       if (nearbySpots.isNotEmpty) {
-        final nearbySpotNames = nearbySpots.map((spot) => spot.name).toList();
-        _proximityTimer ??= Timer(const Duration(seconds: 10), () {
-          _showParkingAlert(
-              userPosition, nearbySpotNames); // Pass user position to the alert
-          _proximityTimer = null;
-          // Reset timer after showing alert
-        });
+        double minDistance = double.infinity;
+        ParkingSpot nearestSpot = nearbySpots.first;
+        for (ParkingSpot spot in nearbySpots) {
+          double d = Geolocator.distanceBetween(
+            userPosition.latitude,
+            userPosition.longitude,
+            spot.latitude,
+            spot.longitude,
+          );
+          if (d < minDistance) {
+            minDistance = d;
+            nearestSpot = spot;
+          }
+        }
+        _nearestSpot = nearestSpot; // Save the nearest spot for later use
+        if (_proximityTimer == null) {
+          _proximityTimer = Timer(Duration(seconds: 20), () {
+            _showParkingAlert(userPosition); // Pass user position to the alert
+            _proximityTimer = null;
+            // Reset timer after showing alert
+          });
+        }
       } else {
         _proximityTimer?.cancel();
         _proximityTimer = null;
@@ -250,8 +266,9 @@ class _HomePageState extends State<HomePage> {
     print("All timers and states reset.");
   }
 
-  void _showParkingAlert(Position userPosition, List<String> nearbySpots) {
+  void _showParkingAlert(Position userPosition) {
     if (_alertShown) return; // Prevent showing the alert again if already shown
+    if (_nearestSpot == null) return; // Ensure nearest spot is set
 
     _alertShown = true;
     print('Nearby parking spot(s) found. Showing notification.');
@@ -260,8 +277,8 @@ class _HomePageState extends State<HomePage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Parking Spot Nearby'),
-          content: const Text('Did you get a parking spot?'),
+          title: Text('Parking Spot Nearby'),
+          content: Text('Did you get a parking spot?'),
           actions: <Widget>[
             TextButton(
               onPressed: () async {
@@ -270,24 +287,24 @@ class _HomePageState extends State<HomePage> {
                   response: 'Yes',
                   location: userPosition,
                   entryTime: _entryTime!,
-                  nearbySpots: nearbySpots,
+                  spotName: _nearestSpot!.name, // Using _nearestSpot
                 );
                 _resetAllTimers(); // Reset all timers after the response
               },
-              child: const Text('Yes'),
+              child: Text('Yes'),
             ),
             TextButton(
               onPressed: () async {
                 Navigator.of(context).pop();
                 await _dataSaver.saveParkingSpotResponse(
-                  response: 'No',
-                  location: userPosition,
-                  entryTime: _entryTime!,
-                  nearbySpots: nearbySpots, // Pass entry time when saving
-                );
+                    response: 'No',
+                    location: userPosition,
+                    entryTime: _entryTime!,
+                    spotName: _nearestSpot!.name // Pass entry time when saving
+                    );
                 _resetAllTimers(); // Reset all timers after the response
               },
-              child: const Text('No'),
+              child: Text('No'),
             ),
           ],
         );
@@ -327,9 +344,9 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
             ListTile(
-              title: const Text('Find Nearby EV Charging Spots'),
-              tileColor: const Color.fromARGB(255, 106, 233, 111),
-              leading: const Icon(
+              title: Text('Find Nearby EV Charging Spots'),
+              tileColor: Color.fromARGB(255, 106, 233, 111),
+              leading: Icon(
                 Icons.bolt,
                 color: Colors.yellow, // Yellow color for the symbol
               ),
@@ -341,15 +358,15 @@ class _HomePageState extends State<HomePage> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         ListTile(
-                          title: const Text('TATA'),
-                          subtitle: const Text('2 charging points are free'),
+                          title: Text('TATA'),
+                          subtitle: Text('2 charging points are free'),
                           onTap: () {
                             Navigator.pop(context);
                           },
                         ),
                         ListTile(
-                          title: const Text('Aether'),
-                          subtitle: const Text(
+                          title: Text('Aether'),
+                          subtitle: Text(
                               'No charging point available for the time being'),
                           onTap: () {
                             Navigator.pop(context);
@@ -402,7 +419,7 @@ class _HomePageState extends State<HomePage> {
           child: Tooltip(
             triggerMode: TooltipTriggerMode.tap,
             message: text.capitalize,
-            child: const Icon(
+            child: Icon(
               Icons.location_pin,
               color: backgroundColor,
               size: 32.0,
@@ -435,8 +452,7 @@ class _HomePageState extends State<HomePage> {
       // Handle error, possibly showing a snackbar or dialog
       print('Error finding location: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Could not find location. Please try again.')),
+        SnackBar(content: Text('Could not find location. Please try again.')),
       );
     }
   }
@@ -482,14 +498,14 @@ class _HomePageState extends State<HomePage> {
                         13,
                       );
                     },
-                    elevation: 4,
-                    backgroundColor: backgroundColor,
-                    child: const Icon(
+                    child: Icon(
                       Icons.my_location,
                       size: 25,
                     ),
+                    elevation: 4,
+                    backgroundColor: backgroundColor,
                   ),
-                  const SizedBox(width: 16),
+                  SizedBox(width: 16),
                   FloatingActionButton(
                     onPressed: () async {
                       await locationProvider
@@ -518,15 +534,15 @@ class _HomePageState extends State<HomePage> {
                         });
                       }
                     },
+                    child: Icon(
+                      isFindVehicleMode ? Icons.directions : Icons.bookmark,
+                      size: 25,
+                    ),
                     elevation: 4,
                     backgroundColor: backgroundColor,
                     tooltip: isFindVehicleMode
                         ? 'Find My Vehicle'
                         : 'Remember this Spot',
-                    child: Icon(
-                      isFindVehicleMode ? Icons.directions : Icons.bookmark,
-                      size: 25,
-                    ),
                   ),
                 ],
               ),
@@ -534,7 +550,7 @@ class _HomePageState extends State<HomePage> {
                 children: [
                   FlutterMap(
                     mapController: map_controller,
-                    options: const MapOptions(
+                    options: MapOptions(
                       initialCenter: LatLng(11.2588, 75.7804),
                       initialZoom: 13.0,
                     ),
@@ -573,29 +589,29 @@ class _HomePageState extends State<HomePage> {
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                          padding: EdgeInsets.symmetric(horizontal: 10),
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: [
-                              const SizedBox(height: 10),
+                              SizedBox(height: 10),
                               _searchbar(),
                               Row(
                                 children: [
-                                  const SizedBox(width: 10),
+                                  SizedBox(width: 10),
                                   _modeButton('Pay Parking'),
-                                  const SizedBox(width: 10),
+                                  SizedBox(width: 10),
                                   _modeButton('On-Street'),
-                                  const Spacer(),
+                                  Spacer(),
                                   _vehicleButton('car'),
                                   _vehicleButton('bike'),
-                                  const SizedBox(width: 20),
+                                  SizedBox(width: 20),
                                 ],
                               ),
                             ],
                           ),
                         ),
                       ),
-                      const SizedBox(height: 20),
+                      SizedBox(height: 20),
                     ],
                   )
                 ],
@@ -618,8 +634,8 @@ class _HomePageState extends State<HomePage> {
           vehicleProvider.selectVehicle(vehicle);
         },
         icon: vehicle == 'car'
-            ? const Icon(Icons.directions_car)
-            : const Icon(Icons.motorcycle_sharp),
+            ? Icon(Icons.directions_car)
+            : Icon(Icons.motorcycle_sharp),
         style: IconButton.styleFrom(
           foregroundColor: isSelected ? backgroundColor : Colors.black,
           backgroundColor: isSelected ? Colors.white : backgroundColor,
@@ -641,7 +657,7 @@ class _HomePageState extends State<HomePage> {
           _isInOnStreetArea = true;
           _entryTime = DateTime.now();
           _onStreetTimer?.cancel();
-          _onStreetTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
+          _onStreetTimer = Timer.periodic(Duration(seconds: 10), (timer) {
             _checkUserPresence();
           });
         } else {
@@ -657,6 +673,7 @@ class _HomePageState extends State<HomePage> {
               .setOnStreetMarkers();
         }
       },
+      child: Text(text),
       style: ElevatedButton.styleFrom(
         elevation: 0,
         foregroundColor: isSelected ? backgroundColor : Colors.black,
@@ -664,12 +681,11 @@ class _HomePageState extends State<HomePage> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(10),
         ),
-        padding: const EdgeInsets.symmetric(
+        padding: EdgeInsets.symmetric(
           horizontal: 20,
           vertical: 10,
         ),
       ),
-      child: Text(text),
     );
   }
 
@@ -678,14 +694,14 @@ class _HomePageState extends State<HomePage> {
       decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(0),
-          boxShadow: const [
+          boxShadow: [
             BoxShadow(
               color: Colors.black26,
               blurRadius: 10,
               offset: Offset(0, 5),
             )
           ]),
-      margin: const EdgeInsets.symmetric(
+      margin: EdgeInsets.symmetric(
         horizontal: 10,
       ),
       child: TextField(
@@ -695,7 +711,7 @@ class _HomePageState extends State<HomePage> {
         },
         controller: text_controller,
         decoration: InputDecoration(
-          contentPadding: const EdgeInsets.symmetric(
+          contentPadding: EdgeInsets.symmetric(
             vertical: 10,
             horizontal: 15,
           ),
@@ -707,7 +723,7 @@ class _HomePageState extends State<HomePage> {
           fillColor: Colors.white,
           hintText: 'Where are you heading to?',
           suffixIcon: IconButton(
-              icon: const Icon(Icons.search),
+              icon: Icon(Icons.search),
               onPressed: () {
                 getLocation(text_controller.text);
                 FocusManager.instance.primaryFocus?.unfocus();

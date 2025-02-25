@@ -50,7 +50,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:parking_app/screens/home_page.dart';
 
 class NotificationService {
   static final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
@@ -105,20 +104,20 @@ class NotificationService {
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
-            title: Text("Paking Notification"),
-            content: Text(
+            title: const Text("Paking Notification"),
+            content: const Text(
               "Is your vehicle parked..?",
             ),
             actions: <Widget>[
               TextButton(
-                child: Text("Yes"),
+                child: const Text("Yes"),
                 onPressed: () {
                   Navigator.of(context).pop();
                   onYesPressed(); // Call the Yes action
                 },
               ),
               TextButton(
-                child: Text("No"),
+                child: const Text("No"),
                 onPressed: () {
                   Navigator.of(context).pop();
                   onNoPressed(); // Call the No action
@@ -177,13 +176,13 @@ static Future<void> showWrongParkingNotification(BuildContext context) async {
     context: context,
     builder: (BuildContext context) {
       return AlertDialog(
-        title: Text("No parking area"),
-        content: Text(
+        title: const Text("No parking area"),
+        content: const Text(
           "This is a no parking zone, Please move your vehicle immediately. Or else you will be fined.",
         ),
         actions: <Widget>[
           TextButton(
-            child: Text("Ok"),
+            child: const Text("Ok"),
             onPressed: () {
               Navigator.of(context).pop(); // Close the dialog
             },

@@ -1,7 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:map_launcher/map_launcher.dart';
 import 'package:parking_app/constants.dart';
@@ -17,7 +14,7 @@ import 'package:parking_app/widgets/booking_timer.dart';
 import 'package:provider/provider.dart';
 
 class BookingSheet extends StatefulWidget {
-  BookingSheet({super.key, required this.space});
+  const BookingSheet({super.key, required this.space});
   final ParkingSpot space;
 
   @override
@@ -31,20 +28,20 @@ class _BookingSheetState extends State<BookingSheet> {
   void scroll() {
     if (!_userScroll || _first) {
       _scrollController.animateTo(MediaQuery.of(context).size.width,
-          duration: Duration(seconds: 1), curve: Curves.easeInOut);
+          duration: const Duration(seconds: 1), curve: Curves.easeInOut);
       _first = false;
     }
   }
 
   void scrollAnyway() {
     _scrollController.animateTo(MediaQuery.of(context).size.width,
-        duration: Duration(seconds: 1), curve: Curves.easeInOut);
+        duration: const Duration(seconds: 1), curve: Curves.easeInOut);
   }
 
   void scrollBack() async {
-    await Future.delayed(Duration(seconds: 1));
+    await Future.delayed(const Duration(seconds: 1));
     _scrollController.animateTo(0,
-        duration: Duration(seconds: 1), curve: Curves.easeInOut);
+        duration: const Duration(seconds: 1), curve: Curves.easeInOut);
   }
 
   openMapsSheet() async {
@@ -78,7 +75,7 @@ class _BookingSheetState extends State<BookingSheet> {
           scroll();
         }
         return Container(
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             borderRadius: BorderRadius.only(
               topLeft: Radius.circular(30),
               topRight: Radius.circular(30),
@@ -91,7 +88,7 @@ class _BookingSheetState extends State<BookingSheet> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20),
+                padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Column(
                   children: [
                     Row(
@@ -108,7 +105,7 @@ class _BookingSheetState extends State<BookingSheet> {
                             onPressed: () {
                               Navigator.pop(context);
                             },
-                            icon: Icon(Icons.close))
+                            icon: const Icon(Icons.close))
                       ],
                     ),
                     Row(
@@ -118,7 +115,7 @@ class _BookingSheetState extends State<BookingSheet> {
                           textAlign: TextAlign.left,
                           style: GoogleFonts.montserrat(
                               fontSize: 14,
-                              color: Color(0xFFA5AAB7),
+                              color: const Color(0xFFA5AAB7),
                               fontWeight: FontWeight.w500),
                         ),
                       ],
@@ -131,7 +128,7 @@ class _BookingSheetState extends State<BookingSheet> {
               ),
               IntrinsicHeight(
                 child: Container(
-                  color: Color(0xFFE8E8E8),
+                  color: const Color(0xFFE8E8E8),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
@@ -139,24 +136,24 @@ class _BookingSheetState extends State<BookingSheet> {
                           onPressed: () {},
                           child: Row(
                             children: [
-                              Icon(
+                              const Icon(
                                 Icons.call,
                                 color: Color(0xFFA5AAB7),
                               ),
-                              SizedBox(
+                              const SizedBox(
                                 width: 5,
                               ),
                               Text(
                                 'Call',
                                 style: GoogleFonts.montserrat(
-                                  color: Color(0xFFA5AAB7),
+                                  color: const Color(0xFFA5AAB7),
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
                             ],
                           )),
-                      VerticalDivider(
+                      const VerticalDivider(
                         color: Color.fromARGB(255, 200, 200, 200),
                         width: 5,
                       ),
@@ -164,22 +161,22 @@ class _BookingSheetState extends State<BookingSheet> {
                           onPressed: openMapsSheet,
                           child: Row(
                             children: [
-                              Icon(
+                              const Icon(
                                 Icons.directions,
                                 color: Color(0xFFA5AAB7),
                               ),
-                              SizedBox(width: 5),
+                              const SizedBox(width: 5),
                               Text(
                                 'Directions',
                                 style: GoogleFonts.montserrat(
-                                  color: Color(0xFFA5AAB7),
+                                  color: const Color(0xFFA5AAB7),
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
                             ],
                           )),
-                      VerticalDivider(
+                      const VerticalDivider(
                         color: Color.fromARGB(255, 200, 200, 200),
                         width: 5,
                       ),
@@ -187,17 +184,17 @@ class _BookingSheetState extends State<BookingSheet> {
                         onPressed: () {},
                         child: Row(
                           children: [
-                            Icon(
+                            const Icon(
                               Icons.share,
                               color: Color(0xFFA5AAB7),
                             ),
-                            SizedBox(
+                            const SizedBox(
                               width: 5,
                             ),
                             Text(
                               'Share',
                               style: GoogleFonts.montserrat(
-                                color: Color(0xFFA5AAB7),
+                                color: const Color(0xFFA5AAB7),
                                 fontSize: 12,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -215,15 +212,15 @@ class _BookingSheetState extends State<BookingSheet> {
                     _userScroll = true;
                   });
                 },
-                child: Container(
+                child: SizedBox(
                   height: MediaQuery.of(context).size.height * 0.70,
                   child: PageView(
                     controller: _scrollController,
                     scrollDirection: Axis.horizontal,
                     children: [
-                      Container(
-                        child: _slots(context),
+                      SizedBox(
                         width: MediaQuery.of(context).size.width,
+                        child: _slots(context),
                       ),
                       Container(
                         color: Colors.white,
@@ -256,10 +253,10 @@ class _BookingSheetState extends State<BookingSheet> {
                     .compareTo(int.parse(b.substring(1))));
               return Column(
                 children: [
-                  SizedBox(
+                  const SizedBox(
                     height: 20,
                   ),
-                  Container(
+                  SizedBox(
                     width: MediaQuery.of(context).size.width * 0.9,
                     height: MediaQuery.of(context).size.height * 0.25,
                     child: ClipRRect(
@@ -275,7 +272,7 @@ class _BookingSheetState extends State<BookingSheet> {
                       Padding(
                         padding: const EdgeInsets.all(10),
                         child: Card(
-                          color: Color.fromARGB(255, 217, 217, 217),
+                          color: const Color.fromARGB(255, 217, 217, 217),
                           child: Padding(
                             padding: const EdgeInsets.all(8.0),
                             child: Container(
@@ -295,14 +292,14 @@ class _BookingSheetState extends State<BookingSheet> {
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
-                                  Row(
+                                  const Row(
                                     children: [
                                       Text('<8 hours'),
                                       Spacer(),
                                       Text('₹ 40/hour'),
                                     ],
                                   ),
-                                  Row(
+                                  const Row(
                                     children: [
                                       Text('>8 hours'),
                                       Spacer(),
@@ -317,7 +314,7 @@ class _BookingSheetState extends State<BookingSheet> {
                       ),
                     ],
                   ),
-                  Container(
+                  SizedBox(
                     height: MediaQuery.of(context).size.height * 0.15,
                     child: Padding(
                       padding: const EdgeInsets.only(
@@ -345,7 +342,7 @@ class _BookingSheetState extends State<BookingSheet> {
                             ),
                             child: Container(
                               width: MediaQuery.of(context).size.width * 0.12,
-                              margin: EdgeInsets.all(10),
+                              margin: const EdgeInsets.all(10),
                               decoration: isSelected
                                   ? BoxDecoration(
                                       border:
@@ -364,11 +361,11 @@ class _BookingSheetState extends State<BookingSheet> {
                                                   ? 'assets/images/car_icon.png'
                                                   : 'assets/images/bike_image.png'),
                                               opacity: slotStatus == 1
-                                                  ? AlwaysStoppedAnimation(0.4)
+                                                  ? const AlwaysStoppedAnimation(0.4)
                                                   : null,
                                             ),
                                           )
-                                    : Text('$slotKey'),
+                                    : Text(slotKey),
                               ),
                             ),
                           );
@@ -376,7 +373,7 @@ class _BookingSheetState extends State<BookingSheet> {
                       ),
                     ),
                   ),
-                  SizedBox(height: 50),
+                  const SizedBox(height: 50),
                   _bottomRow(context),
                 ],
               );
@@ -421,7 +418,7 @@ class _BookingSheetState extends State<BookingSheet> {
                   'car';
               return Expanded(
                 child: Container(
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     color: Color(0xFFF3F4FF),
                   ),
                   child: Row(
@@ -431,17 +428,17 @@ class _BookingSheetState extends State<BookingSheet> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             car
-                                ? Icon(
+                                ? const Icon(
                                     Icons.directions_car,
                                     color: backgroundColor,
                                     size: 25,
                                   )
-                                : Icon(
+                                : const Icon(
                                     Icons.motorcycle,
                                     color: backgroundColor,
                                     size: 25,
                                   ),
-                            SizedBox(
+                            const SizedBox(
                               width: 8,
                             ),
                             car
@@ -483,7 +480,7 @@ class _BookingSheetState extends State<BookingSheet> {
                                           status.slot!,
                                           car ? 'car' : 'bike');
                                       await Future.delayed(
-                                          Duration(seconds: 2));
+                                          const Duration(seconds: 2));
                                       scrollAnyway();
                                     } else {
                                       status.cancel_booking();
@@ -498,14 +495,14 @@ class _BookingSheetState extends State<BookingSheet> {
                                               ? 'Reserve ${status.slot} for 20 INR'
                                               : 'Cancel Reservation',
                                       textAlign: TextAlign.center,
-                                      style: TextStyle(
+                                      style: const TextStyle(
                                         color: Colors.white,
                                       ),
                                     ),
                                   ),
                                 ),
                               )
-                            : SizedBox(),
+                            : const SizedBox(),
                       )
                     ],
                   ),

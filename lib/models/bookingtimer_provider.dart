@@ -4,19 +4,16 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:get/get.dart';
 import 'package:parking_app/constants.dart';
-import 'package:parking_app/models/vehicle_provider.dart';
 
 import 'package:parking_app/services/auth_service.dart';
 import 'package:parking_app/services/notification_service.dart';
 
 import 'package:parking_app/services/sp_repository.dart';
-import 'package:provider/provider.dart';
 
 class BookingTimerProvider extends ChangeNotifier {
-  FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  DatabaseReference _ref = FirebaseDatabase.instance.ref('booking_spots');
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final DatabaseReference _ref = FirebaseDatabase.instance.ref('booking_spots');
   Timer? _timer;
   Timer? _buffer;
   Timer? _parkingTimer;
@@ -26,9 +23,9 @@ class BookingTimerProvider extends ChangeNotifier {
   String? _slot;
   String? _vehicle;
   bool _booked = false, _parked = false, _pendingPay = false;
-  Duration _remainingTime = Duration(minutes: 30);
-  Duration _bufferTime = Duration(minutes: 15);
-  Duration _timeParked = Duration();
+  Duration _remainingTime = const Duration(minutes: 30);
+  Duration _bufferTime = const Duration(minutes: 15);
+  Duration _timeParked = const Duration();
   static const Duration totalTime = Duration(minutes: 30);
   static const Duration totalBuffer = Duration(minutes: 15);
   late int _walletBalance;
@@ -47,7 +44,7 @@ class BookingTimerProvider extends ChangeNotifier {
   String? get slot => _slot;
   int get walletBalance => _walletBalance;
 
-  void set slot(String? slotKey) {
+  set slot(String? slotKey) {
     _slot = slotKey;
   }
 
@@ -105,16 +102,16 @@ class BookingTimerProvider extends ChangeNotifier {
           _parkingTimer?.cancel();
           _walletBalance = data['walletBalance'];
           if (data.containsKey('secondScan')) {
-            bool _secondScan = data['secondScan'];
-            if (_secondScan == true) {
+            bool secondScan = data['secondScan'];
+            if (secondScan == true) {
               _pendingPay = true;
 
               String vehicle = "car";
               if (_slot!.startsWith('B')) {
                 vehicle = "bike";
               }
-              _ref.child('${_space}/${vehicle} slots/${_slot}').set(0);
-              DatabaseReference slotRef = _ref.child('${_space}/${vehicle}');
+              _ref.child('$_space/$vehicle slots/$_slot').set(0);
+              DatabaseReference slotRef = _ref.child('$_space/$vehicle');
               final snapshot = await slotRef.once();
               final currentValue = snapshot.snapshot.value != null
                   ? int.parse(snapshot.snapshot.value.toString())
@@ -144,7 +141,7 @@ class BookingTimerProvider extends ChangeNotifier {
             _parkingTimer?.cancel();
             _timeParked = Duration(seconds: data['timeParked']);
             if (_timeParked.inSeconds < 0) {
-              _timeParked = _timeParked + Duration(seconds: 900);
+              _timeParked = _timeParked + const Duration(seconds: 900);
               _firestore
                   .collection('users')
                   .doc(AuthService.user!.uid)
@@ -161,7 +158,7 @@ class BookingTimerProvider extends ChangeNotifier {
 
             _calcTimeParked();
             if (_timeParked.isNegative) {
-              _timeParked = Duration(seconds: 0);
+              _timeParked = const Duration(seconds: 0);
             } else {
               _startParkingTimer();
             }
@@ -179,8 +176,8 @@ class BookingTimerProvider extends ChangeNotifier {
               //   }
             }
             if (data.containsKey('parkedSlot')) {
-              String _parkedSlot = data['parkedSlot'];
-              if (_parkedSlot != _slot) {
+              String parkedSlot = data['parkedSlot'];
+              if (parkedSlot != _slot) {
                 showNotification();
                 _warned = true;
               } else {
@@ -205,7 +202,7 @@ class BookingTimerProvider extends ChangeNotifier {
     _bufferTime = totalBuffer - timePassed;
 
     if (_remainingTime.isNegative) {
-      _remainingTime = Duration(seconds: 0);
+      _remainingTime = const Duration(seconds: 0);
       _booked = false;
       _stopParkingTimer();
       cancel_booking();
@@ -216,7 +213,7 @@ class BookingTimerProvider extends ChangeNotifier {
   void _showFaultyNotif() {
     NotificationService.showInstantNotification(
         'You have simultaneously parked in two slots',
-        'Please park only in the slot ${_slot}');
+        'Please park only in the slot $_slot');
   }
 
   void showFaultyCorrected() {
@@ -252,23 +249,23 @@ class BookingTimerProvider extends ChangeNotifier {
     _buffer?.cancel();
     _remainingTime = totalTime;
     _bufferTime = totalBuffer;
-    _timeParked = Duration(seconds: 0);
+    _timeParked = const Duration(seconds: 0);
     notifyListeners();
   }
 
   void _startParkingTimer() {
     _parked = true;
     _parkingTimer?.cancel();
-    _parkingTimer = Timer.periodic(Duration(seconds: 1), (timer) {
-      _timeParked += Duration(seconds: 1);
+    _parkingTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      _timeParked += const Duration(seconds: 1);
       notifyListeners();
     });
   }
 
   void startTimer() {
-    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_remainingTime.inSeconds > 0) {
-        _remainingTime -= Duration(seconds: 1);
+        _remainingTime -= const Duration(seconds: 1);
         notifyListeners();
       } else {
         _timer?.cancel();
@@ -278,15 +275,15 @@ class BookingTimerProvider extends ChangeNotifier {
 
   void _startBuffer() {
     _buffer?.cancel();
-    _buffer = Timer.periodic(Duration(seconds: 1), (timer) {
+    _buffer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_bufferTime.inSeconds > 0 && _booked) {
-        _bufferTime -= Duration(seconds: 1);
-        if (_bufferTime == Duration(seconds: 0)) {
+        _bufferTime -= const Duration(seconds: 1);
+        if (_bufferTime == const Duration(seconds: 0)) {
           _startParkingTimer();
         }
         notifyListeners();
       } else {
-        _bufferTime = Duration(minutes: 30);
+        _bufferTime = const Duration(minutes: 30);
         _buffer?.cancel();
       }
     });
@@ -294,7 +291,7 @@ class BookingTimerProvider extends ChangeNotifier {
 
   Future<DateTime?> getBookingTime() async {
     String? bookingTimeString =
-        await SharedPreferenceRepository.instance.getValue(bookingTimerKey);
+        SharedPreferenceRepository.instance.getValue(bookingTimerKey);
     if (bookingTimeString != null) {
       print('Booking Time got from shared Pref');
       print('Saved Time: $bookingTimeString');
@@ -308,7 +305,7 @@ class BookingTimerProvider extends ChangeNotifier {
 
   Future<DateTime?> getParkedTime() async {
     String? parkedTimeString =
-        await SharedPreferenceRepository.instance.getValue(parkingTimerKey);
+        SharedPreferenceRepository.instance.getValue(parkingTimerKey);
     if (parkedTimeString != null) {
       print('Got Parked Time from SharedPred');
       print('Parked Time: $parkedTimeString');
@@ -321,12 +318,12 @@ class BookingTimerProvider extends ChangeNotifier {
 
   Future<Duration> getTimeParked() async {
     int? timeParkedinms =
-        await SharedPreferenceRepository.instance.getValue(timeParkedKey);
+        SharedPreferenceRepository.instance.getValue(timeParkedKey);
     if (timeParkedinms != null) {
       _timeParked = Duration(milliseconds: timeParkedinms);
       return _timeParked;
     }
-    return Duration(seconds: 0);
+    return const Duration(seconds: 0);
   }
 
   void saveBookingTimetoFirebase(
@@ -334,7 +331,7 @@ class BookingTimerProvider extends ChangeNotifier {
     _space = space;
     _slot = slotkey;
     _vehicle = vehicle;
-    print('Saved Slot: ${_slot}');
+    print('Saved Slot: $_slot');
 
     try {
       // Assuming walletBalance is stored as an int
@@ -354,16 +351,16 @@ class BookingTimerProvider extends ChangeNotifier {
           textColor: Colors.white,
           fontSize: 20,
           msg:
-              '₹20 deducted from wallet \n Current Balance: ${_walletBalance}');
-      await _ref.child(space).child('${vehicle} slots').update({
-        '$slotkey': 1,
+              '₹20 deducted from wallet \n Current Balance: $_walletBalance');
+      await _ref.child(space).child('$vehicle slots').update({
+        slotkey: 1,
       });
-      DatabaseReference _spaceRef = _ref.child(space!);
-      final snapshot = await _spaceRef.child('$vehicle').once();
+      DatabaseReference spaceRef = _ref.child(space);
+      final snapshot = await spaceRef.child(vehicle).once();
       final currentValue = snapshot.snapshot.value != null
           ? int.parse(snapshot.snapshot.value.toString())
           : 0;
-      await _spaceRef.update({'$vehicle': currentValue - 1});
+      await spaceRef.update({vehicle: currentValue - 1});
       // Provider.of<BookingTimerProvider>(context, listen: false)
       //     .saveBookingTime(bookingTime);
     } catch (e) {
@@ -380,16 +377,16 @@ class BookingTimerProvider extends ChangeNotifier {
     _timer?.cancel();
     _buffer?.cancel();
     try {
-      DatabaseReference _spaceRef = _ref.child(_space!);
-      DatabaseReference _slotsRef = _spaceRef.child('$_vehicle slots');
-      print('SavedSlot: ${_slot}');
-      await _spaceRef.child('$_vehicle slots').update({'${_slot}': 0});
+      DatabaseReference spaceRef = _ref.child(_space!);
+      DatabaseReference slotsRef = spaceRef.child('$_vehicle slots');
+      print('SavedSlot: $_slot');
+      await spaceRef.child('$_vehicle slots').update({'$_slot': 0});
 
-      final snapshot = await _spaceRef.child('$_vehicle').once();
+      final snapshot = await spaceRef.child('$_vehicle').once();
       final currentValue = snapshot.snapshot.value != null
           ? int.parse(snapshot.snapshot.value.toString())
           : 0;
-      await _spaceRef.update({'$_vehicle': currentValue + 1});
+      await spaceRef.update({'$_vehicle': currentValue + 1});
     } catch (e) {
       print('Error Cancelling Booking $e');
     }

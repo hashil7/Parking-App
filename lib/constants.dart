@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-final backgroundColor = Color.fromARGB(255, 0x65, 0x6C, 0xEE);
-final warningColor = Colors.yellow;
+const backgroundColor = Color.fromARGB(255, 0x65, 0x6C, 0xEE);
+const warningColor = Colors.yellow;
 const bookingTimerKey = 'bookingTimer';
 const spotKey = 'bookingSpot';
 const parkingTimerKey = 'parkingTimer';

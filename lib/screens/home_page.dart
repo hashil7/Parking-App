@@ -28,8 +28,6 @@ import 'package:parking_app/models/evparkingspots.dart';
 import 'dart:async';
 import 'package:parking_app/models/data_saver_response.dart';
 
-
-
 class HomePage extends StatefulWidget {
   HomePage({super.key, this.bookingtime, required this.currentposition});
   DateTime? bookingtime;
@@ -53,15 +51,15 @@ class _HomePageState extends State<HomePage> {
   Marker? searchlocMarker;
 
   ParkingSpot? _current_booking;
-  void openBottomSheet(BuildContext context, ParkingSpot p_spot) {
+  void openBottomSheet(BuildContext context, ParkingSpot pSpot) {
     if (mounted) {
       showModalBottomSheet(
         isScrollControlled: true,
         context: context,
         builder: (BuildContext context) {
-          return p_spot.type == 'booking'
-              ? BookingSheet(space: p_spot)
-              : SpotDetails(p_spot: p_spot, onTap: () {});
+          return pSpot.type == 'booking'
+              ? BookingSheet(space: pSpot)
+              : SpotDetails(p_spot: pSpot, onTap: () {});
           // return Provider.of<BookingTimerProvider>(context, listen: false)
           //         .booked
           //     ? CustomSheet(
@@ -94,17 +92,12 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-
-    @override
+  @override
   void dispose() {
     _onStreetTimer?.cancel();
     _proximityTimer?.cancel();
     super.dispose();
   }
-
-
-
-  
 
   // Future<void> getLocation(String text) async {
   //   List<Location> locations = await locationFromAddress(text);
@@ -132,9 +125,6 @@ class _HomePageState extends State<HomePage> {
   //     );
   //   });
   // }
-
-
-
 
 //   void _checkUserPresence() async {
 //   if (_entryTime == null || !_isInOnStreetArea) return;
@@ -197,277 +187,259 @@ class _HomePageState extends State<HomePage> {
 //   }
 // }
 
+  Timer? _proximityTimer; // Timer to track proximity
+  bool _alertShown = false; // To track if the alert is already shown
 
+  void _checkUserPresence() async {
+    if (_entryTime == null || !_isInOnStreetArea || _alertShown) return;
 
+    print('Entry Time: $_entryTime');
+    print('Is in On-Street Area: $_isInOnStreetArea');
 
-Timer? _proximityTimer; // Timer to track proximity
-bool _alertShown = false; // To track if the alert is already shown
+    final elapsed = DateTime.now().difference(_entryTime!);
+    if (elapsed.inSeconds >= 5) {
+      final locationProvider =
+          Provider.of<LocationProvider>(context, listen: false);
+      final userPosition = locationProvider.currentLocation;
 
-void _checkUserPresence() async {
-  if (_entryTime == null || !_isInOnStreetArea || _alertShown) return;
+      final nearbySpots =
+          Provider.of<ParkingSpotsNotifier>(context, listen: false)
+              .parkingSpots
+              .where((spot) {
+        final distance = Geolocator.distanceBetween(
+          userPosition.latitude,
+          userPosition.longitude,
+          spot.latitude,
+          spot.longitude,
+        );
+        return distance <= 30; // 10 meters
+      }).toList();
 
-  print('Entry Time: $_entryTime');
-  print('Is in On-Street Area: $_isInOnStreetArea');
+      print('Number of nearby spots found: ${nearbySpots.length}');
 
-  final elapsed = DateTime.now().difference(_entryTime!);
-  if (elapsed.inMinutes >= 1) {
-    final locationProvider = Provider.of<LocationProvider>(context, listen: false);
-    final userPosition = locationProvider.currentLocation;
-
-    final nearbySpots = Provider.of<ParkingSpotsNotifier>(context, listen: false)
-        .parkingSpots
-        .where((spot) {
-          final distance = Geolocator.distanceBetween(
-            userPosition.latitude,
-            userPosition.longitude,
-            spot.latitude,
-            spot.longitude,
-          );
-          return distance <= 30; // 10 meters
-        }).toList();
-
-    print('Number of nearby spots found: ${nearbySpots.length}');
-
-    if (nearbySpots.isNotEmpty) {
-      if (_proximityTimer == null) {
-        _proximityTimer = Timer(Duration(seconds: 20), () {
-          _showParkingAlert(userPosition); // Pass user position to the alert
+      if (nearbySpots.isNotEmpty) {
+        final nearbySpotNames = nearbySpots.map((spot) => spot.name).toList();
+        _proximityTimer ??= Timer(const Duration(seconds: 10), () {
+          _showParkingAlert(
+              userPosition, nearbySpotNames); // Pass user position to the alert
           _proximityTimer = null;
-            // Reset timer after showing alert
+          // Reset timer after showing alert
         });
+      } else {
+        _proximityTimer?.cancel();
+        _proximityTimer = null;
+        _alertShown = false;
       }
-    } else {
-      _proximityTimer?.cancel();
-      _proximityTimer = null;
-      _alertShown = false;
     }
   }
-}
 
-
-
-Timer? _stopDurationTimer;
+  Timer? _stopDurationTimer;
 // Assume you have an instance of DataSaver class
-final DataSaverResponse _dataSaver = DataSaverResponse();
+  final DataSaverResponse _dataSaver = DataSaverResponse();
 
 // Method to show the parking alert
-void _resetAllTimers() {
-  _proximityTimer?.cancel();
-  _proximityTimer = null;
+  void _resetAllTimers() {
+    _proximityTimer?.cancel();
+    _proximityTimer = null;
 
-  _stopDurationTimer?.cancel();
-  _stopDurationTimer = null;
+    _stopDurationTimer?.cancel();
+    _stopDurationTimer = null;
 
-  _alertShown = false;
-  _entryTime = null;
-  print("All timers and states reset.");
-}
+    _alertShown = false;
+    _entryTime = null;
+    print("All timers and states reset.");
+  }
 
-void _showParkingAlert(Position userPosition) {
-  if (_alertShown) return; // Prevent showing the alert again if already shown
+  void _showParkingAlert(Position userPosition, List<String> nearbySpots) {
+    if (_alertShown) return; // Prevent showing the alert again if already shown
 
-  _alertShown = true;
-  print('Nearby parking spot(s) found. Showing notification.');
+    _alertShown = true;
+    print('Nearby parking spot(s) found. Showing notification.');
 
-  showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return AlertDialog(
-        title: Text('Parking Spot Nearby'),
-        content: Text('Did you get a parking spot?'),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () async {
-              Navigator.of(context).pop();
-              await _dataSaver.saveParkingSpotResponse(
-                response: 'Yes',
-                location: userPosition,
-                entryTime: _entryTime!, // Pass entry time when saving
-              );
-              _resetAllTimers(); // Reset all timers after the response
-            },
-            child: Text('Yes'),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.of(context).pop();
-              await _dataSaver.saveParkingSpotResponse(
-                response: 'No',
-                location: userPosition,
-                entryTime: _entryTime!, // Pass entry time when saving
-              );
-              _resetAllTimers(); // Reset all timers after the response
-            },
-            child: Text('No'),
-          ),
-        ],
-      );
-    },
-  );
-}
-void _resetProximityState() {
-  // Reset the alertShown flag and any other relevant state
-  _alertShown = false;
-  _proximityTimer?.cancel();
-  _proximityTimer = null;
-}
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Parking Spot Nearby'),
+          content: const Text('Did you get a parking spot?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                await _dataSaver.saveParkingSpotResponse(
+                  response: 'Yes',
+                  location: userPosition,
+                  entryTime: _entryTime!,
+                  nearbySpots: nearbySpots,
+                );
+                _resetAllTimers(); // Reset all timers after the response
+              },
+              child: const Text('Yes'),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                await _dataSaver.saveParkingSpotResponse(
+                  response: 'No',
+                  location: userPosition,
+                  entryTime: _entryTime!,
+                  nearbySpots: nearbySpots, // Pass entry time when saving
+                );
+                _resetAllTimers(); // Reset all timers after the response
+              },
+              child: const Text('No'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
+  void _resetProximityState() {
+    // Reset the alertShown flag and any other relevant state
+    _alertShown = false;
+    _proximityTimer?.cancel();
+    _proximityTimer = null;
+  }
 
-
-
-
-
-
-
-
-void showNearbyParkingSpots(List<ParkingSpot> nearbynSpots) {
-  // Show a dialog or bottom sheet with the list of nearby spots
-  showModalBottomSheet(
-    context: context,
-    builder: (context) {
-      return Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Expanded(
-            child: ListView.builder(
-              itemCount: nearbynSpots.length,
-              itemBuilder: (context, index) {
-                final spot = nearbynSpots[index];
-                return ListTile(
-                  title: Text(spot.name),
-                  subtitle: Text(spot.address),
-                  onTap: () {
-                    // Handle parking spot selection
-                    openBottomSheet(context, spot);
+  void showNearbyParkingSpots(List<ParkingSpot> nearbynSpots) {
+    // Show a dialog or bottom sheet with the list of nearby spots
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Expanded(
+              child: ListView.builder(
+                itemCount: nearbynSpots.length,
+                itemBuilder: (context, index) {
+                  final spot = nearbynSpots[index];
+                  return ListTile(
+                    title: Text(spot.name),
+                    subtitle: Text(spot.address),
+                    onTap: () {
+                      // Handle parking spot selection
+                      openBottomSheet(context, spot);
+                    },
+                  );
+                },
+              ),
+            ),
+            ListTile(
+              title: const Text('Find Nearby EV Charging Spots'),
+              tileColor: const Color.fromARGB(255, 106, 233, 111),
+              leading: const Icon(
+                Icons.bolt,
+                color: Colors.yellow, // Yellow color for the symbol
+              ),
+              onTap: () {
+                showModalBottomSheet(
+                  context: context,
+                  builder: (context) {
+                    return Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        ListTile(
+                          title: const Text('TATA'),
+                          subtitle: const Text('2 charging points are free'),
+                          onTap: () {
+                            Navigator.pop(context);
+                          },
+                        ),
+                        ListTile(
+                          title: const Text('Aether'),
+                          subtitle: const Text(
+                              'No charging point available for the time being'),
+                          onTap: () {
+                            Navigator.pop(context);
+                          },
+                        ),
+                        // Add more items as needed
+                      ],
+                    );
                   },
                 );
               },
             ),
-          ),
-          ListTile(
-            title: Text('Find Nearby EV Charging Spots'),
-            tileColor: Color.fromARGB(255, 106, 233, 111),
-            leading: Icon(
-              Icons.bolt,
-              color: Colors.yellow, // Yellow color for the symbol
-            ),
-            onTap: () {
-              showModalBottomSheet(
-                context: context,
-                builder: (context) {
-                  return Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      ListTile(
-                        title: Text('TATA'),
-                        subtitle: Text('2 charging points are free'),
-                        onTap: () {
-                          Navigator.pop(context);
-                        },
-                      ),
-                      ListTile(
-                        title: Text('Aether'),
-                        subtitle: Text('No charging point available for the time being'),
-                        onTap: () {
-                          Navigator.pop(context);
-                        },
-                      ),
-                      // Add more items as needed
-                    ],
-                  );
-                },
-              );
-            },
-          ),
-        ],
-      );
-    },
-  );
-}
-
-
-
-double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
-  const p = 0.017453292519943295;
-  const c = cos;
-  final a = 0.5 - c((lat2 - lat1) * p) / 2 +
-      c(lat1 * p) * c(lat2 * p) *
-          (1 - c((lon2 - lon1) * p)) / 2;
-  return 12742 * asin(sqrt(a)); // Distance in kilometers
-}
-
-
-
-
-
-
-  Future<void> getLocation(String text) async {
-  try {
-    // Geocode the location text to get latitude and longitude
-    List<Location> locations = await locationFromAddress(text);
-    final searchedLocation =
-        LatLng(locations.first.latitude, locations.first.longitude);
-
-
-    print('Searched location: ${searchedLocation.latitude}, ${searchedLocation.longitude}');
-
-    // Move the map to the searched location
-    setState(() {
-      map_controller.move(searchedLocation, 15);
-    });
-
-    // Create a marker for the searched location
-    setState(() {
-      searchlocMarker = Marker(
-        rotate: true,
-        width: 80.0,
-        height: 80.0,
-        point: searchedLocation,
-        child: Tooltip(
-          triggerMode: TooltipTriggerMode.tap,
-          message: text.capitalize,
-          child: Icon(
-            Icons.location_pin,
-            color: backgroundColor,
-            size: 32.0,
-          ),
-        ),
-      );
-    });
-
-    // Filter nearby parking spots
-    final nearbySpots = Provider.of<ParkingSpotsNotifier>(context, listen: false)
-        .parkingSpots
-        .where((spot) {
-          final distance = calculateDistance(
-              searchedLocation.latitude, searchedLocation.longitude, spot.latitude, spot.longitude);
-          return distance <= 5.0; // 5 km radius
-        }).toList();
-
-        // _nearbyNewSpots = Provider.of<ParkingSpotsNotifier>(context, listen: false)
-        //   .parkingSpots
-        //   .where((spot) {
-        //     final distance = calculateDistance(
-        //         currentcentre.latitude, currentcentre.longitude, spot.latitude, spot.longitude);
-        //     return distance <= 1.0;
-        //   }).toList();
-
-    // Display the nearby parking spots in a modal
-    showNearbyParkingSpots(nearbySpots);
-
-  } catch (e) {
-    // Handle error, possibly showing a snackbar or dialog
-    print('Error finding location: $e');
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Could not find location. Please try again.')),
+          ],
+        );
+      },
     );
   }
-}
 
+  double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
+    const p = 0.017453292519943295;
+    const c = cos;
+    final a = 0.5 -
+        c((lat2 - lat1) * p) / 2 +
+        c(lat1 * p) * c(lat2 * p) * (1 - c((lon2 - lon1) * p)) / 2;
+    return 12742 * asin(sqrt(a)); // Distance in kilometers
+  }
 
+  Future<void> getLocation(String text) async {
+    try {
+      // Geocode the location text to get latitude and longitude
+      List<Location> locations = await locationFromAddress(text);
+      final searchedLocation =
+          LatLng(locations.first.latitude, locations.first.longitude);
 
+      print(
+          'Searched location: ${searchedLocation.latitude}, ${searchedLocation.longitude}');
 
+      // Move the map to the searched location
+      setState(() {
+        map_controller.move(searchedLocation, 15);
+      });
 
+      // Create a marker for the searched location
+      setState(() {
+        searchlocMarker = Marker(
+          rotate: true,
+          width: 80.0,
+          height: 80.0,
+          point: searchedLocation,
+          child: Tooltip(
+            triggerMode: TooltipTriggerMode.tap,
+            message: text.capitalize,
+            child: const Icon(
+              Icons.location_pin,
+              color: backgroundColor,
+              size: 32.0,
+            ),
+          ),
+        );
+      });
+
+      // Filter nearby parking spots
+      final nearbySpots =
+          Provider.of<ParkingSpotsNotifier>(context, listen: false)
+              .parkingSpots
+              .where((spot) {
+        final distance = calculateDistance(searchedLocation.latitude,
+            searchedLocation.longitude, spot.latitude, spot.longitude);
+        return distance <= 5.0; // 5 km radius
+      }).toList();
+
+      // _nearbyNewSpots = Provider.of<ParkingSpotsNotifier>(context, listen: false)
+      //   .parkingSpots
+      //   .where((spot) {
+      //     final distance = calculateDistance(
+      //         currentcentre.latitude, currentcentre.longitude, spot.latitude, spot.longitude);
+      //     return distance <= 1.0;
+      //   }).toList();
+
+      // Display the nearby parking spots in a modal
+      showNearbyParkingSpots(nearbySpots);
+    } catch (e) {
+      // Handle error, possibly showing a snackbar or dialog
+      print('Error finding location: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Could not find location. Please try again.')),
+      );
+    }
+  }
 
   final map_controller = MapController();
   final text_controller = TextEditingController();
@@ -510,17 +482,18 @@ double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
                         13,
                       );
                     },
-                    child: Icon(
+                    elevation: 4,
+                    backgroundColor: backgroundColor,
+                    child: const Icon(
                       Icons.my_location,
                       size: 25,
                     ),
-                    elevation: 4,
-                    backgroundColor: backgroundColor,
                   ),
-                  SizedBox(width: 16),
+                  const SizedBox(width: 16),
                   FloatingActionButton(
                     onPressed: () async {
-                      await locationProvider.determinePosition(); // Check and request location services
+                      await locationProvider
+                          .determinePosition(); // Check and request location services
                       if (!locationProvider.serviceEnabled) {
                         // Show notification if location services are not enabled
                         NotificationService.showInstantNotification(
@@ -545,15 +518,15 @@ double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
                         });
                       }
                     },
-                    child: Icon(
-                      isFindVehicleMode ? Icons.directions : Icons.bookmark,
-                      size: 25,
-                    ),
                     elevation: 4,
                     backgroundColor: backgroundColor,
                     tooltip: isFindVehicleMode
                         ? 'Find My Vehicle'
                         : 'Remember this Spot',
+                    child: Icon(
+                      isFindVehicleMode ? Icons.directions : Icons.bookmark,
+                      size: 25,
+                    ),
                   ),
                 ],
               ),
@@ -561,7 +534,7 @@ double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
                 children: [
                   FlutterMap(
                     mapController: map_controller,
-                    options: MapOptions(
+                    options: const MapOptions(
                       initialCenter: LatLng(11.2588, 75.7804),
                       initialZoom: 13.0,
                     ),
@@ -587,7 +560,7 @@ double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
                         }),
                       ]),
                       PolygonLayer(
-                      polygons: PolygonHelper.createPolygons(),
+                        polygons: PolygonHelper.createPolygons(),
                       ),
                     ],
                   ),
@@ -600,29 +573,29 @@ double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 10),
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: [
-                              SizedBox(height: 10),
+                              const SizedBox(height: 10),
                               _searchbar(),
                               Row(
                                 children: [
-                                  SizedBox(width: 10),
+                                  const SizedBox(width: 10),
                                   _modeButton('Pay Parking'),
-                                  SizedBox(width: 10),
+                                  const SizedBox(width: 10),
                                   _modeButton('On-Street'),
-                                  Spacer(),
+                                  const Spacer(),
                                   _vehicleButton('car'),
                                   _vehicleButton('bike'),
-                                  SizedBox(width: 20),
+                                  const SizedBox(width: 20),
                                 ],
                               ),
                             ],
                           ),
                         ),
                       ),
-                      SizedBox(height: 20),
+                      const SizedBox(height: 20),
                     ],
                   )
                 ],
@@ -645,8 +618,8 @@ double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
           vehicleProvider.selectVehicle(vehicle);
         },
         icon: vehicle == 'car'
-            ? Icon(Icons.directions_car)
-            : Icon(Icons.motorcycle_sharp),
+            ? const Icon(Icons.directions_car)
+            : const Icon(Icons.motorcycle_sharp),
         style: IconButton.styleFrom(
           foregroundColor: isSelected ? backgroundColor : Colors.black,
           backgroundColor: isSelected ? Colors.white : backgroundColor,
@@ -663,12 +636,12 @@ double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
         setState(() {
           _selectedMode = text;
         });
-         if (text == 'On-Street') {
+        if (text == 'On-Street') {
           // Start timer
           _isInOnStreetArea = true;
           _entryTime = DateTime.now();
           _onStreetTimer?.cancel();
-          _onStreetTimer = Timer.periodic(Duration(seconds: 10), (timer) {
+          _onStreetTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
             _checkUserPresence();
           });
         } else {
@@ -684,7 +657,6 @@ double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
               .setOnStreetMarkers();
         }
       },
-      child: Text(text),
       style: ElevatedButton.styleFrom(
         elevation: 0,
         foregroundColor: isSelected ? backgroundColor : Colors.black,
@@ -692,11 +664,12 @@ double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(10),
         ),
-        padding: EdgeInsets.symmetric(
+        padding: const EdgeInsets.symmetric(
           horizontal: 20,
           vertical: 10,
         ),
       ),
+      child: Text(text),
     );
   }
 
@@ -705,14 +678,14 @@ double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
       decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(0),
-          boxShadow: [
+          boxShadow: const [
             BoxShadow(
               color: Colors.black26,
               blurRadius: 10,
               offset: Offset(0, 5),
             )
           ]),
-      margin: EdgeInsets.symmetric(
+      margin: const EdgeInsets.symmetric(
         horizontal: 10,
       ),
       child: TextField(
@@ -722,7 +695,7 @@ double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
         },
         controller: text_controller,
         decoration: InputDecoration(
-          contentPadding: EdgeInsets.symmetric(
+          contentPadding: const EdgeInsets.symmetric(
             vertical: 10,
             horizontal: 15,
           ),
@@ -734,7 +707,7 @@ double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
           fillColor: Colors.white,
           hintText: 'Where are you heading to?',
           suffixIcon: IconButton(
-              icon: Icon(Icons.search),
+              icon: const Icon(Icons.search),
               onPressed: () {
                 getLocation(text_controller.text);
                 FocusManager.instance.primaryFocus?.unfocus();

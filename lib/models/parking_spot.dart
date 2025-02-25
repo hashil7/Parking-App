@@ -33,11 +33,9 @@
 //         _freeBikeSlots = freeBikeSlots,
 //         _bigCarSpots = bigCarSpots; // Add this line
 
-
 //   int get freeCarSlots => _freeCarSlots;
 //   int get freeBikeSlots => _freeBikeSlots;
 //   int get bigCarSpots => _bigCarSpots;
-
 
 //   set freeCarSlots(int value) {
 //     if (_freeCarSlots != value) {
@@ -60,10 +58,6 @@
 //       notifyListeners();
 //     }
 //   }
-
-
-
-
 
 import 'package:flutter/material.dart';
 
@@ -105,7 +99,7 @@ class ParkingSpot extends ChangeNotifier {
 
   int get freeCarSlots => _freeCarSlots;
   int get freeBikeSlots => _freeBikeSlots;
-  int get bigCarSpots => _bigCarSpots!; // Ensure this line is present
+  int get bigCarSpots => 3; // Ensure this line is present
 
   set freeCarSlots(int value) {
     if (_freeCarSlots != value) {
@@ -121,12 +115,11 @@ class ParkingSpot extends ChangeNotifier {
     }
   }
 
-  set bigCarSpots(int value) { // Ensure this method is present
+  set bigCarSpots(int value) {
+    // Ensure this method is present
     if (_bigCarSpots != value) {
       _bigCarSpots = value;
       notifyListeners();
     }
   }
 }
-
-

@@ -1,7 +1,9 @@
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
 import 'package:google_fonts/google_fonts.dart';
@@ -25,7 +27,7 @@ import 'dart:convert';
 import 'dart:math';
 
 class SpotDetails extends StatefulWidget {
-  SpotDetails({super.key, required this.p_spot, required this.onTap});
+  const SpotDetails({super.key, required this.p_spot, required this.onTap});
   final ParkingSpot p_spot;
   final VoidCallback onTap;
 
@@ -34,8 +36,10 @@ class SpotDetails extends StatefulWidget {
 }
 
 class _SpotDetailsState extends State<SpotDetails> with WidgetsBindingObserver {
+  final DatabaseReference _database = FirebaseDatabase.instance.ref();
   int _currentIndex = 0;
- ///////////////////
+  late Map<String, dynamic> jsonData;
+  int occupancyPercent = 0;
   List<String> locationImages = [];
   late String previousImageUrl;
 
@@ -71,7 +75,7 @@ class _SpotDetailsState extends State<SpotDetails> with WidgetsBindingObserver {
     if (response.statusCode == 200) {
       final json = jsonDecode(response.body);
       final duration = json['routes'][0]['legs'][0]['duration'];
-      print(duration);
+      print("duration: ${duration}");
       return duration;
     } else {
       throw Exception('Failed to load duration');
@@ -82,12 +86,62 @@ class _SpotDetailsState extends State<SpotDetails> with WidgetsBindingObserver {
 
   DateTime? deadline;
   double? probability;
+  Future<Map<String, dynamic>> loadJsonData() async {
+    DatabaseEvent event =
+        await _database.child('onstreet_spots/${widget.p_spot.name}').once();
+    DataSnapshot snapshot = event.snapshot;
+    return Map<String, dynamic>.from(snapshot.value as Map);
+  }
+
+  int getOccupancyPercent(Map<String, dynamic> data, String day, int hour) {
+    Map<String, dynamic> dayData =
+        Map<String, dynamic>.from(data['popularTimes'][day]);
+    if (dayData.containsKey(hour.toString())) {
+      return dayData[hour.toString()];
+    }
+    return 0; // Return 0 if no data is found for the given day and hour
+  }
+
+  String getDayString(int weekday) {
+    switch (weekday) {
+      case DateTime.sunday:
+        return 'Su';
+      case DateTime.monday:
+        return 'Mo';
+      case DateTime.tuesday:
+        return 'Tu';
+      case DateTime.wednesday:
+        return 'We';
+      case DateTime.thursday:
+        return 'Th';
+      case DateTime.friday:
+        return 'Fr';
+      case DateTime.saturday:
+        return 'Sa';
+      default:
+        return '';
+    }
+  }
+
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
+    loadJsonData().then((data) {
+      setState(() {
+        jsonData = data;
+        DateTime now = DateTime.now();
+        String currentDay = getDayString(now.weekday);
+        int currentHour = now.hour;
+        occupancyPercent =
+            getOccupancyPercent(jsonData, currentDay, currentHour);
+        print('Current Day: $currentDay');
+        print('Current Hour: $currentHour');
+        print('Occupancy Percent: $occupancyPercent');
+      });
+    });
     WidgetsBinding.instance.addObserver(this);
-    _imageTimer = Timer.periodic(Duration(seconds: 10), (timer) {
+    _imageTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
       setState(() {
         _currentIndex =
             (_currentIndex + 1) % (widget.p_spot.locationImage.length);
@@ -141,7 +195,7 @@ class _SpotDetailsState extends State<SpotDetails> with WidgetsBindingObserver {
     if (selectedvehicle == 'car' && updatedSpot.freeCarSlots == 0 ||
         selectedvehicle == 'bike' && updatedSpot.freeBikeSlots == 0) {
       NotificationService.showInstantNotification('Oh No!',
-          '${updatedSpot.name} has run out of ${selectedvehicle} spots');
+          '${updatedSpot.name} has run out of $selectedvehicle spots');
     }
   }
 
@@ -190,11 +244,11 @@ class _SpotDetailsState extends State<SpotDetails> with WidgetsBindingObserver {
               borderRadius: BorderRadius.circular(30),
               color: Colors.white,
             ),
-            padding: EdgeInsets.symmetric(
+            padding: const EdgeInsets.symmetric(
               horizontal: 10,
               vertical: 10,
             ),
-            margin: EdgeInsets.symmetric(horizontal: 15),
+            margin: const EdgeInsets.symmetric(horizontal: 15),
             child: Column(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
@@ -212,7 +266,7 @@ class _SpotDetailsState extends State<SpotDetails> with WidgetsBindingObserver {
                           ),
                           Text(
                             updatedSpot.address,
-                            style: TextStyle(color: Colors.grey),
+                            style: const TextStyle(color: Colors.grey),
                           ),
                           // Text(
                           //   'You should do ${updatedSpot.parkingType} Parking',
@@ -221,32 +275,32 @@ class _SpotDetailsState extends State<SpotDetails> with WidgetsBindingObserver {
                           vehicleProvider.selectedVehicle == 'car'
                               ? Text(
                                   'You should do ${updatedSpot.carParkingType} Parking',
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                       color: Color.fromARGB(255, 222, 19, 53)),
                                 )
                               : Text(
                                   'You should do ${updatedSpot.bikeParkingType} Parking',
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                       color: Color.fromARGB(255, 222, 19, 53)),
                                 ),
                         ],
                       ),
-                      Spacer(),
+                      const Spacer(),
                       Text(
                         widget.p_spot.type == 'booking'
                             ? '₹${widget.p_spot.price}/hr'
                             : '',
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 20,
                         ),
                       ),
-                      SizedBox(width: 10),
+                      const SizedBox(width: 10),
                     ],
                   ),
-                  SizedBox(
+                  const SizedBox(
                     height: 10,
                   ),
-                  Container(
+                  SizedBox(
                     width: MediaQuery.of(context).size.width,
                     height: MediaQuery.of(context).size.height * 0.23,
                     child: Image.network(
@@ -268,7 +322,6 @@ class _SpotDetailsState extends State<SpotDetails> with WidgetsBindingObserver {
                       },
                     ),
                   ),
-                  
 
                   // Container(
                   //   width: MediaQuery.of(context).size.width,
@@ -294,23 +347,20 @@ class _SpotDetailsState extends State<SpotDetails> with WidgetsBindingObserver {
                   //   ),
                   // ),
 
-
-
-
                   Row(
                     children: [
                       vehicleProvider.selectedVehicle == 'car'
-                          ? Icon(
+                          ? const Icon(
                               Icons.directions_car,
                               color: backgroundColor,
                               size: 25,
                             )
-                          : Icon(
+                          : const Icon(
                               Icons.motorcycle,
                               color: backgroundColor,
                               size: 25,
                             ),
-                      SizedBox(
+                      const SizedBox(
                         width: 5,
                       ),
                       vehicleProvider.selectedVehicle == 'car'
@@ -322,14 +372,14 @@ class _SpotDetailsState extends State<SpotDetails> with WidgetsBindingObserver {
                               '${updatedSpot.freeBikeSlots} Bike Spots Available',
                               style: TextStyle(fontSize: 16, color: textcolor),
                             ),
-                      Spacer(),
+                      const Spacer(),
                       IconButton(
                         onPressed: () {
                           Provider.of<NavcheckProvider>(context, listen: false)
                               .isNavigating = true;
                           openMapsSheet();
                         },
-                        icon: Icon(
+                        icon: const Icon(
                           Icons.directions,
                           size: 40,
                           color: backgroundColor,
@@ -368,15 +418,15 @@ class _SpotDetailsState extends State<SpotDetails> with WidgetsBindingObserver {
                               //     });
                               handlePaymentSuccess();
                             },
-                            child: Text(
-                              'Book Now',
-                              style: TextStyle(color: Colors.white),
-                            ),
                             style: ElevatedButton.styleFrom(
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               backgroundColor: backgroundColor,
+                            ),
+                            child: const Text(
+                              'Book Now',
+                              style: TextStyle(color: Colors.white),
                             ),
                           ),
                         )
@@ -406,10 +456,34 @@ class _SpotDetailsState extends State<SpotDetails> with WidgetsBindingObserver {
                                     : updatedSpot.freeBikeSlots;
                             avgFillingTime =
                                 widget.p_spot.avgFillingTime ?? 360;
+                            print("avgFillingTime: $avgFillingTime");
                             probability =
                                 (avgFillingTime * currentSpots * 100) /
                                     duration;
-
+                            probability = probability!.clamp(0, 99);
+                            try {
+                              await FirebaseFirestore.instance
+                                  .collection('predictions')
+                                  .add({
+                                'probability': probability,
+                                'timestamp': FieldValue.serverTimestamp(),
+                                'userLocation': {
+                                  'latitude':
+                                      locationProvider.currentLocation.latitude,
+                                  'longitude': locationProvider
+                                      .currentLocation.longitude,
+                                },
+                                'duration': duration,
+                                'currentSpots': currentSpots,
+                                'avgFillingTime': avgFillingTime,
+                                'spotName': widget.p_spot.name,
+                                'userId': AuthService.user?.uid,
+                                'vehicleType': vehicleProvider.selectedVehicle,
+                              });
+                            } catch (e) {
+                              print('Error saving prediction data: $e');
+                            }
+                            // probability = 100 - occupancyPercent.toDouble();
                             showDialog(
                                 context: context,
                                 builder: (context) {
@@ -418,11 +492,11 @@ class _SpotDetailsState extends State<SpotDetails> with WidgetsBindingObserver {
                                   );
                                 });
                           },
-                          child: Text('Predict Availability',
-                              style: TextStyle(color: Colors.white)),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: backgroundColor,
                           ),
+                          child: const Text('Predict Availability',
+                              style: TextStyle(color: Colors.white)),
                         )
                 ]),
           );
@@ -432,7 +506,6 @@ class _SpotDetailsState extends State<SpotDetails> with WidgetsBindingObserver {
   }
 
   Widget _probability(double probability) {
-    probability = probability.clamp(0, 99);
     String prob = probability.toStringAsFixed(0);
     final Random random = Random();
     final int proba = 97 + random.nextInt(100 - 97 + 1);
@@ -444,7 +517,7 @@ class _SpotDetailsState extends State<SpotDetails> with WidgetsBindingObserver {
     } else {
       probColor = Colors.green;
     }
-    return Container(
+    return SizedBox(
       height: MediaQuery.of(context).size.height * 0.2,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -452,7 +525,7 @@ class _SpotDetailsState extends State<SpotDetails> with WidgetsBindingObserver {
           Text(
             'Availability Prediction',
             style: GoogleFonts.saira(
-                color: Color(0xFF333E63),
+                color: const Color(0xFF333E63),
                 fontWeight: FontWeight.bold,
                 fontSize: 20),
           ),
@@ -460,14 +533,14 @@ class _SpotDetailsState extends State<SpotDetails> with WidgetsBindingObserver {
             textAlign: TextAlign.center,
             TextSpan(
               children: [
-                TextSpan(text: 'There is '),
+                const TextSpan(text: 'There is '),
                 TextSpan(
-                  text: '${proba}%',
+                  text: '$prob%',
                   style: TextStyle(color: probColor),
                 ),
-                TextSpan(text: ' chance of finding a free spot'),
+                const TextSpan(text: ' chance of finding a free spot'),
               ],
-              style: TextStyle(
+              style: const TextStyle(
                 color: Color(0xFF6E819B),
                 fontSize: 15,
               ),
@@ -477,17 +550,17 @@ class _SpotDetailsState extends State<SpotDetails> with WidgetsBindingObserver {
             onPressed: () {
               Navigator.pop(context);
             },
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Text(
-                'OK',
-                style: TextStyle(color: Colors.white, fontSize: 18),
-              ),
-            ),
             style: ElevatedButton.styleFrom(
               backgroundColor: backgroundColor,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            child: const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20),
+              child: Text(
+                'OK',
+                style: TextStyle(color: Colors.white, fontSize: 18),
               ),
             ),
           )
@@ -502,7 +575,7 @@ class _SpotDetailsState extends State<SpotDetails> with WidgetsBindingObserver {
 
     FirebaseFirestore firestore = FirebaseFirestore.instance;
     DateTime bookingTime =
-        DateTime.timestamp().add(Duration(hours: 5, minutes: 30));
+        DateTime.timestamp().add(const Duration(hours: 5, minutes: 30));
 
     try {
       print('Saving to firebase');
@@ -532,9 +605,9 @@ class _SpotDetailsState extends State<SpotDetails> with WidgetsBindingObserver {
 }
 
 Widget _timerDisclaimer(BuildContext context) {
-  return Container(
+  return SizedBox(
     height: MediaQuery.of(context).size.height * 0.5,
-    child: Column(
+    child: const Column(
       children: [
         Image(image: AssetImage('assets/images/car_pic.png')),
       ],

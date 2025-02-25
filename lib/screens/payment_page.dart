@@ -24,7 +24,7 @@ class PaymentPage extends StatefulWidget {
 class _PaymentPageState extends State<PaymentPage> {
   final database = FirebaseDatabase.instance.ref();
   DateTime? parkedtime;
-  Duration parkingduration = Duration();
+  Duration parkingduration = const Duration();
 
   double amount = 0;
   void get_parkingtime() {
@@ -51,17 +51,17 @@ class _PaymentPageState extends State<PaymentPage> {
       return Scaffold(
           body: Container(
         color: Colors.amber[20],
-        padding: EdgeInsets.all(20),
+        padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            SizedBox(height: 60),
-            Text(
+            const SizedBox(height: 60),
+            const Text(
               'Get QR scanned after Parking',
               style: TextStyle(
                 fontSize: 20,
               ),
             ),
-            SizedBox(
+            const SizedBox(
               height: 20,
             ),
             QrImageView(
@@ -78,23 +78,23 @@ class _PaymentPageState extends State<PaymentPage> {
             //     fontSize: 20,
             //   ),
             // ),
-            Text('Booked Slot: ${notifier.slot}',style: TextStyle(fontSize: 20),),
-            ParkedTime(),
+            Text('Booked Slot: ${notifier.slot}',style: const TextStyle(fontSize: 20),),
+            const ParkedTime(),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text('Total Amount: ₹ ${formattedAmount}',
-                    style: TextStyle(fontSize: 20)),
+                Text('Total Amount: ₹ $formattedAmount',
+                    style: const TextStyle(fontSize: 20)),
               ],
             ),
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
             ElevatedButton(
               onPressed: () {
                 notifier.resetLocalValues();
                 notifier.clear();
 
               },
-              child: Text(
+              child: const Text(
                 'Pay',
                 style: TextStyle(fontSize: 20),
               ),
@@ -116,12 +116,12 @@ void onPaymentSuccessful() {
 }
 
 Widget _parkingtime(Duration time) {
-  return Container(
+  return SizedBox(
     height: 50,
     width: 100,
     child: Text(
       '${time.inHours.toString().padLeft(2, '0')}:${(time.inMinutes % 60).toString().padLeft(2, '0')}',
-      style: TextStyle(
+      style: const TextStyle(
         fontSize: 30,
         color: Colors.black,
       ),
@@ -137,12 +137,12 @@ class ParkedTime extends StatelessWidget {
     return Consumer<BookingTimerProvider>(
         builder: (context, ptimeprovider, child) {
       Duration timeParked = ptimeprovider.timeParked;
-      return Container(
+      return SizedBox(
         height: 50,
         width: 150,
         child: Text(
           '${timeParked.inHours.toString().padLeft(2, '0')}:${(timeParked.inMinutes % 60).toString().padLeft(2, '0')}:${(timeParked.inSeconds % 60).toString().padLeft(2, '0')}',
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 30,
             color: Colors.black,
           ),

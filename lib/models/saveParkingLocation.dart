@@ -81,7 +81,7 @@ class SaveParkingLocation {
     final position = locationProvider.currentLocation;
     await locationService.saveLocation(position.latitude, position.longitude);
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Location saved')),
+      const SnackBar(content: Text('Location saved')),
     );
 
   }
@@ -97,12 +97,12 @@ class SaveParkingLocation {
         await launchUrl(url);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not launch Google Maps')),
+          const SnackBar(content: Text('Could not launch Google Maps')),
         );
       }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('No saved location found')),
+        const SnackBar(content: Text('No saved location found')),
       );
     }
   }

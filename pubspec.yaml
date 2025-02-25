@@ -118,6 +118,7 @@ flutter:
     - assets/images/qr.png
     - assets/images/bike.png
     - assets/images/bike_image.png
+    - lib/data/BeachCarParking.json
 
 
   # An image asset can refer to one or more resolution-specific "variants", see

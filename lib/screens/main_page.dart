@@ -21,7 +21,7 @@ class _MainPageState extends State<MainPage> {
   Position currentposition = Position(
       longitude: 78.9629,
       latitude: 20.5937,
-      timestamp: DateTime.timestamp().add(Duration(
+      timestamp: DateTime.timestamp().add(const Duration(
         hours: 5,
         minutes: 30,
       )),
@@ -56,7 +56,7 @@ class _MainPageState extends State<MainPage> {
     print(currentposition);
 
     _children = [
-      ProfilePage(),
+      const ProfilePage(),
       HomePage(
         currentposition: currentposition,
         bookingtime: widget.bookingtime,
@@ -83,7 +83,7 @@ class _MainPageState extends State<MainPage> {
           showSelectedLabels: false,
           showUnselectedLabels: false,
           selectedItemColor: backgroundColor,
-          selectedIconTheme: IconThemeData(
+          selectedIconTheme: const IconThemeData(
             color: backgroundColor,
           ),
           backgroundColor: const Color.fromARGB(225, 24, 26, 32),
@@ -99,19 +99,19 @@ class _MainPageState extends State<MainPage> {
 }
 
 List<BottomNavigationBarItem> _bottomnavbaritems = [
-  BottomNavigationBarItem(
+  const BottomNavigationBarItem(
       icon: Icon(
         Icons.person,
         color: Color.fromARGB(255, 255, 255, 255),
       ),
       label: "Profile"),
-  BottomNavigationBarItem(
+  const BottomNavigationBarItem(
       icon: Icon(
         Icons.home,
         color: Colors.white,
       ),
       label: "Home"),
-  BottomNavigationBarItem(
+  const BottomNavigationBarItem(
       icon: Icon(
         Icons.qr_code,
         color: Colors.white,

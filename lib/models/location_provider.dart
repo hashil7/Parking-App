@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:parking_app/constants.dart';
 import 'package:parking_app/services/notification_service.dart';
 import 'package:location/location.dart';
 import 'package:flutter_map/flutter_map.dart'; // Ensure Polygon is imported from here
 import 'polygon_helper.dart';
 import 'dart:async';
-import 'data_saver.dart';
 import 'data_saver.dart';
 import 'parkingspotsnotifier.dart';
 import 'package:provider/provider.dart';
@@ -35,7 +32,7 @@ class LocationProvider extends ChangeNotifier {
     speed: 0,
     speedAccuracy: 0,
   );
-  bool _serviceEnabled = true;
+  final bool _serviceEnabled = true;
   Location location = Location();
   List<Polygon> polygons = PolygonHelper.createPolygons();
 
@@ -45,7 +42,7 @@ class LocationProvider extends ChangeNotifier {
   bool _notificationShown = false; // Flag to track if notification has been shown
   final GlobalKey<NavigatorState> navigatorKey;
     final DataSaver _dataSaver = DataSaver(); // Initialize your DataSaver instance
-    bool _insidePolygonConfirmed = false; // Declare and initialize the flag
+    final bool _insidePolygonConfirmed = false; // Declare and initialize the flag
 
 
 
@@ -113,14 +110,11 @@ void _monitorSpeedAndStop() {
     _stopTimer = null;
     _notificationShown = false; // Reset notification flag when the user moves
   } else if (_isInsidePolygon && !_notificationShown) {
-    if (_stopTime == null) {
-      _stopTime = DateTime.now();
-      //print('Stop time set to $_stopTime');
-    }
+    _stopTime ??= DateTime.now();
 
     _stopTimer?.cancel();
 
-    _stopTimer = Timer.periodic(Duration(seconds: 1), (timer) {
+    _stopTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_stopTime != null) {
         final elapsedTime = DateTime.now().difference(_stopTime!);
         //print('Elapsed time: $elapsedTime');
@@ -193,13 +187,13 @@ void _monitorSpeedAndStop() {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text("No parking area"),
-          content: Text(
+          title: const Text("No parking area"),
+          content: const Text(
             "This is a no parking zone, Please move your vehicle immediately. Or else you will be fined.",
           ),
           actions: <Widget>[
             TextButton(
-              child: Text("Find Nearby Parking Spots"),
+              child: const Text("Find Nearby Parking Spots"),
               onPressed: () {
                 Navigator.of(context).pop();
                 findNearbyNewSpots(context);
@@ -218,11 +212,6 @@ void _monitorSpeedAndStop() {
 
 
 Future<void> findNearbyNewSpots(BuildContext context) async {
-  if (_currentLocation == null) {
-    print('Current location is not available');
-    return;
-  }
-
   final currentLat = _currentLocation.latitude; // Remove null-safety operator
   final currentLng = _currentLocation.longitude; // Remove null-safety operator
 
@@ -268,16 +257,16 @@ void showNearbyParkingSpots(BuildContext context, List<ParkingSpot> nearbynSpots
 }
 
 
-void openBottomSheet(BuildContext context, ParkingSpot p_spot) {
+void openBottomSheet(BuildContext context, ParkingSpot pSpot) {
   // No need for 'mounted' check, we check if 'context' is valid instead.
-  if (context != null && context.mounted) {
+  if (context.mounted) {
     showModalBottomSheet(
       isScrollControlled: true,
       context: context,
       builder: (BuildContext context) {
-        return p_spot.type == 'booking'
-            ? BookingSheet(space: p_spot)
-            : SpotDetails(p_spot: p_spot, onTap: () {});
+        return pSpot.type == 'booking'
+            ? BookingSheet(space: pSpot)
+            : SpotDetails(p_spot: pSpot, onTap: () {});
       },
     );
   } else {

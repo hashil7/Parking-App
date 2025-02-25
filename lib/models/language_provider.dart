@@ -3,7 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:get/get.dart'; // Import GetX
 
 class LanguageProvider extends ChangeNotifier {
-  Locale _locale = Locale('en'); // Default to English
+  Locale _locale = const Locale('en'); // Default to English
 
   Locale get locale => _locale;
 

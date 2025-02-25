@@ -1,7 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
 
 import 'package:google_fonts/google_fonts.dart';
 import 'package:parking_app/constants.dart';
@@ -26,9 +25,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 //import 'package:parking_app/models/on_street_exit_handler.dart' as exit_handler;
-import 'package:parking_app/models/life_cycle_observer.dart';
 import 'package:parking_app/models/language_provider.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:parking_app/models/app_translations.dart'; // Import translations file
 import 'package:get/get.dart';
@@ -51,62 +48,58 @@ Future<void> fetchInitialParkingSpots(
       await databaseReference.child('booking_spots').get();
   var onstreetvalue = onstreetSnapshot.value as Map<dynamic, dynamic>;
   var bookingvalue = bookingSnapshot.value as Map<dynamic, dynamic>;
-  if (onstreetvalue != null) {
-    onstreetSpots.clear();
-    onstreetvalue.forEach(
-      (key, values) {
-        var images = List<String>.from(values['image']);
-        var carSlots = values['car'] as List<dynamic>;
-        var bikeSlots = values['bike'] as List<dynamic>;
-        var bigCarSlots = values['bigCarSpots'] as List<dynamic>;
+  onstreetSpots.clear();
+  onstreetvalue.forEach(
+    (key, values) {
+      var images = List<String>.from(values['image']);
+      var carSlots = values['car'] as List<dynamic>;
+      var bikeSlots = values['bike'] as List<dynamic>;
+      var bigCarSlots = values['bigCarSpots'] as List<dynamic>;
 
-        int freeCarSlots = carSlots.fold(0, (sum, item) => sum + item as int);
-        int freeBikeSlots = bikeSlots.fold(0, (sum, item) => sum + item as int);
-        int freeBigCarSlots = bigCarSlots.fold(0, (sum, item) => sum + item as int);
-        onstreetSpots.add(
-          ParkingSpot(
-              name: key,
-              address: values['address'],
-              latitude: values['lat'],
-              longitude: values['long'],
-              freeCarSlots: freeCarSlots,
-              freeBikeSlots: freeBikeSlots,
-              
-              locationImage: images,
-              avgFillingTime: values['fillingTime'],
-              carParkingType: values['carParkingType'],
-              bikeParkingType: values['bikeParkingType'],
-              bigCarSpots: freeBigCarSlots,
-              type: 'onstreet'),
-        );
-      },
-    );
-  }
-  print(onstreetSpots);
-  if (bookingvalue != null) {
-    bookingSpots.clear();
-    bookingvalue.forEach(
-      (key, values) {
-        var images = List<String>.from(values['image']);
-
-        bookingSpots.add(
-          ParkingSpot(
+      int freeCarSlots = carSlots.fold(0, (sum, item) => sum + item as int);
+      int freeBikeSlots = bikeSlots.fold(0, (sum, item) => sum + item as int);
+      int freeBigCarSlots = bigCarSlots.fold(0, (sum, item) => sum + item as int);
+      onstreetSpots.add(
+        ParkingSpot(
             name: key,
             address: values['address'],
             latitude: values['lat'],
             longitude: values['long'],
-            freeCarSlots: values['car'],
-            freeBikeSlots: values['bike'],
-            //parkingType: values['parkingType'],
-            locationImage: images,
-            type: 'booking',
+            freeCarSlots: freeCarSlots,
+            freeBikeSlots: freeBikeSlots,
             
-            price: values['price'],
-          ),
-        );
-      },
-    );
-  }
+            locationImage: images,
+            avgFillingTime: values['fillingTime'],
+            carParkingType: values['carParkingType'],
+            bikeParkingType: values['bikeParkingType'],
+            bigCarSpots: freeBigCarSlots,
+            type: 'onstreet'),
+      );
+    },
+  );
+  print(onstreetSpots);
+  bookingSpots.clear();
+  bookingvalue.forEach(
+    (key, values) {
+      var images = List<String>.from(values['image']);
+
+      bookingSpots.add(
+        ParkingSpot(
+          name: key,
+          address: values['address'],
+          latitude: values['lat'],
+          longitude: values['long'],
+          freeCarSlots: values['car'],
+          freeBikeSlots: values['bike'],
+          //parkingType: values['parkingType'],
+          locationImage: images,
+          type: 'booking',
+          
+          price: values['price'],
+        ),
+      );
+    },
+  );
   print(bookingSpots);
 }
 
@@ -264,7 +257,7 @@ void main() async {
           //   create: (context) => exit_handler.OnStreetTabNotifier(), // Add the OnStreetTabNotifier here
           // ),
           ChangeNotifierProvider(create: (_) => LanguageProvider()), // Register LanguageProvider
-        ], child: MyApp()),
+        ], child: const MyApp()),
       );
     },
   );
@@ -298,7 +291,7 @@ class MyApp extends StatelessWidget {
         GlobalCupertinoLocalizations.delegate,
         DefaultMaterialLocalizations.delegate,
       ],
-      home: SplashScreen(), // Your splash screen or initial route
+      home: const SplashScreen(), // Your splash screen or initial route
     );
   }
 }

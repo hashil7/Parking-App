@@ -8,16 +8,20 @@ import 'package:geolocator/geolocator.dart';
 import 'package:parking_app/constants.dart';
 import 'package:parking_app/models/bookingtimer_provider.dart';
 import 'package:parking_app/models/location_provider.dart';
+import 'package:parking_app/models/parking_spot.dart';
 
 import 'package:parking_app/screens/main_page.dart';
 import 'package:parking_app/screens/signin_page.dart';
 import 'package:parking_app/services/auth_service.dart';
+import 'package:parking_app/widgets/spot_details.dart';
 import 'package:parking_app/widgets/type_writer.dart';
 import 'package:provider/provider.dart';
 
 // import 'package:typewritertext/typewritertext.dart';
 
 class SplashScreen extends StatefulWidget {
+  const SplashScreen({super.key});
+
   @override
   State<SplashScreen> createState() => _SplashScreenState();
 }
@@ -34,6 +38,7 @@ class _SplashScreenState extends State<SplashScreen>
         .loadBookingTime();
   }
 
+  @override
   void initState() {
     Provider.of<LocationProvider>(context, listen: false).determinePosition();
     // _loadBookingTime();
@@ -41,7 +46,7 @@ class _SplashScreenState extends State<SplashScreen>
       print(AuthService.user?.displayName.toString());
     }
     WidgetsBinding.instance.addObserver(this);
-    Future.wait([Future.delayed(Duration(seconds: 5))]).whenComplete(() {
+    Future.wait([Future.delayed(const Duration(seconds: 5))]).whenComplete(() {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
@@ -50,7 +55,7 @@ class _SplashScreenState extends State<SplashScreen>
                   currentposition: currentposition,
                   bookingtime: bookingtime,
                 )//:MainPage()
-               : SigninPage(),
+               : const SigninPage(),
         ),
       );
     });
@@ -76,7 +81,7 @@ class _SplashScreenState extends State<SplashScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            SizedBox(
+            const SizedBox(
               height: 100,
             ),
             SvgPicture.asset(
@@ -84,10 +89,10 @@ class _SplashScreenState extends State<SplashScreen>
               height: MediaQuery.of(context).size.height * 0.4,
               width: MediaQuery.of(context).size.width * 0.7,
             ),
-            SizedBox(
+            const SizedBox(
               height: 50,
             ),
-            TypeWriter(
+            const TypeWriter(
               text: 'Welcome to \n  P-SUVIDA',
               delay: Duration(milliseconds: 100),
             ),

@@ -7,7 +7,7 @@ import 'package:parking_app/screens/main_page.dart';
 import 'package:parking_app/services/auth_service.dart';
 
 class SigninPage extends StatefulWidget {
-  SigninPage({super.key});
+  const SigninPage({super.key});
 
   @override
   State<SigninPage> createState() => _SigninPageState();
@@ -65,7 +65,7 @@ class _SigninPageState extends State<SigninPage> {
                   }
                 
                 },
-                child: Text('Sign in with Google'))
+                child: const Text('Sign in with Google'))
           ],
         ),
       ),

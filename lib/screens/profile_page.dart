@@ -385,7 +385,7 @@ class _ProfilePageState extends State<ProfilePage> {
         title: Center(
           child: Text(
             'Profile'.tr, // Use GetX for translations
-            style: TextStyle(
+            style: const TextStyle(
               color: Colors.white,
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -410,9 +410,9 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Widget _buildHeader() {
     return Container(
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: backgroundColor,
-        borderRadius: const BorderRadius.only(
+        borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(30),
           bottomRight: Radius.circular(30),
         ),
@@ -448,7 +448,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> _signOut() async {
     await AuthService.signOut();
-    Get.offAll(() =>  SigninPage()); // Use GetX for navigation
+    Get.offAll(() =>  const SigninPage()); // Use GetX for navigation
   }
 
   Widget _wallet() {
@@ -477,15 +477,15 @@ class _ProfilePageState extends State<ProfilePage> {
                   const SizedBox(height: 10),
                   ElevatedButton(
                     onPressed: () {},
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFEDF0F2),
+                    ),
                     child: Text(
                       'Recharge'.tr, // Use GetX for translations
                       style: GoogleFonts.montserrat(
                         color: Colors.black,
                         fontWeight: FontWeight.w600,
                       ),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFEDF0F2),
                     ),
                   ),
                 ],

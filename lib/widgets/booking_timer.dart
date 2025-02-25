@@ -1,4 +1,3 @@
-import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -6,7 +5,6 @@ import 'package:gradient_circular_progress_indicator/gradient_circular_progress_
 import 'package:parking_app/constants.dart';
 import 'package:parking_app/models/bookingtimer_provider.dart';
 import 'package:parking_app/models/tabindex_provider.dart';
-import 'package:parking_app/services/sp_repository.dart';
 import 'package:provider/provider.dart';
 
 class BookingTimer extends StatelessWidget {
@@ -27,7 +25,7 @@ class BookingTimer extends StatelessWidget {
               Transform.scale(
                 scale: 0.8,
                 child: Stack(children: [
-                  Image(
+                  const Image(
                     image: AssetImage('assets/images/Vector.jpg'),
                     alignment: Alignment.center,
                   ),
@@ -37,12 +35,12 @@ class BookingTimer extends StatelessWidget {
                     child: Container(
                       width: 167,
                       height: 164,
-                      padding: EdgeInsets.only(),
+                      padding: const EdgeInsets.only(),
                       child: GradientCircularProgressIndicator(
                         progress: progress,
                         stroke: 11,
-                        backgroundColor: Color(0xFFCEE0F4),
-                        gradient: LinearGradient(colors: [
+                        backgroundColor: const Color(0xFFCEE0F4),
+                        gradient: const LinearGradient(colors: [
                           Color(0xFF3B77DC),
                           Color(0xFF8D71FA),
                         ]),
@@ -51,7 +49,7 @@ class BookingTimer extends StatelessWidget {
                   ),
                 ]),
               ),
-              Text(
+              const Text(
                 'Get QR scanned within',
                 style: TextStyle(
                   color: Color(0xFF8498B4),
@@ -60,14 +58,14 @@ class BookingTimer extends StatelessWidget {
               ),
               Text(
                 '${remainingTime.inMinutes}:${(remainingTime.inSeconds % 60).toString().padLeft(2, '0')}',
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 30,
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF203D65),
                 ),
               ),
               Container(
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                     // gradient: purpleButtonColour,
                     ),
                 child: ElevatedButton(
@@ -84,7 +82,7 @@ class BookingTimer extends StatelessWidget {
                           );
                         });
                   },
-                  child: Text(
+                  child: const Text(
                     'Add Time +',
                     style: TextStyle(
                       color: Colors.white,
@@ -102,7 +100,7 @@ class BookingTimer extends StatelessWidget {
                     bookingTimerProvider.parked
                         ? ''
                         : '${bufferTime.inMinutes}:${(bufferTime.inSeconds % 60).toString().padLeft(2, '0')}',
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                       color: Color(0xFF203D65),
@@ -112,13 +110,13 @@ class BookingTimer extends StatelessWidget {
               ),
               Container(
                 width: MediaQuery.of(context).size.width * 0.2,
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                     // gradient: purpleButtonColour,
                     ),
                 child: ElevatedButton(
                     style: ButtonStyle(
                       backgroundColor: WidgetStateProperty.all(backgroundColor),
-                      padding: WidgetStateProperty.all(EdgeInsets.all(8)),
+                      padding: WidgetStateProperty.all(const EdgeInsets.all(8)),
                       shape: WidgetStateProperty.all<RoundedRectangleBorder>(
                         RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(5),
@@ -129,12 +127,12 @@ class BookingTimer extends StatelessWidget {
                       Navigator.pop(context);
                       index.currentIndex = 2;
                     },
-                    child: Image(
+                    child: const Image(
                       color: Colors.white,
                       image: AssetImage('assets/images/qr.png'),
                     )),
               ),
-              SizedBox(
+              const SizedBox(
                 height: 10,
               ),
               TextButton(
@@ -142,7 +140,7 @@ class BookingTimer extends StatelessWidget {
                   bookingTimerProvider.cancel_booking();
                   onCancel();
                 },
-                child: Text(
+                child: const Text(
                   'Cancel',
                   style: TextStyle(color: Color(0xFF8498B4)),
                 ),
@@ -159,31 +157,31 @@ class BookingTimer extends StatelessWidget {
       height: MediaQuery.of(context).size.height * 0.4,
       color: Colors.white,
       child: Column(children: [
-        SizedBox(
+        const SizedBox(
           height: 10,
         ),
-        Image(
+        const Image(
           image: AssetImage('assets/images/car_pic.png'),
         ),
-        SizedBox(
+        const SizedBox(
           height: 10,
         ),
         Text(
           'Addon Time',
           style: GoogleFonts.saira(
-            color: Color(0xFF333E63),
+            color: const Color(0xFF333E63),
             fontWeight: FontWeight.bold,
             fontSize: 18,
           ),
         ),
-        Text(
+        const Text(
           'Buy additional time to get the QR scanned',
           style: TextStyle(
             color: Color(0xFF6E819B),
           ),
           textAlign: TextAlign.center,
         ),
-        SizedBox(
+        const SizedBox(
           height: 15,
         ),
         Row(
@@ -192,15 +190,15 @@ class BookingTimer extends StatelessWidget {
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: backgroundColor,
-                padding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+                padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10)),
               ),
               onPressed: () {
                 Provider.of<BookingTimerProvider>(context, listen: false)
-                    .addTime(Duration(minutes: 15));
+                    .addTime(const Duration(minutes: 15));
               },
-              child: Text(
+              child: const Text(
                 '+15 min\nfor 10 INR',
                 style: TextStyle(color: Colors.white),
               ),
@@ -208,12 +206,12 @@ class BookingTimer extends StatelessWidget {
             ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: backgroundColor,
-                  padding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10)),
                 ),
                 onPressed: () {},
-                child: Text(
+                child: const Text(
                   '+30 min\nfor 20 INR',
                   style: TextStyle(
                     color: Colors.white,

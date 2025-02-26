@@ -410,7 +410,7 @@ class _SpotDetailsState extends State<SpotDetails> with WidgetsBindingObserver {
                             int currentHour = DateTime.now().hour;
                             if (currentHour >= 8 && currentHour < 20) {
                               // Daytime: compute probability as average of slot-based and duration-based components.
-                                double slotProbability = (currentSpots / 10) * 100;
+                                double slotProbability = (currentSpots / 15) * 100;
                                 slotProbability = slotProbability.clamp(0.0, 100.0);
                               double timeToReachMin = duration / 60.0;
                               double timeProbability = timeToReachMin > 30

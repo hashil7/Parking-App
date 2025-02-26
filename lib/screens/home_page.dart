@@ -213,7 +213,7 @@ class _HomePageState extends State<HomePage> {
           spot.latitude,
           spot.longitude,
         );
-        return distance <= 2000; // 10 meters
+        return distance <= 30; // 10 meters
       }).toList();
 
       print('Number of nearby spots found: ${nearbySpots.length}');
@@ -233,7 +233,8 @@ class _HomePageState extends State<HomePage> {
             nearestSpot = spot;
           }
         }
-        _nearestSpot = nearestSpot; // Save the nearest spot for later use
+        _nearestSpot = nearestSpot;
+        
         if (_proximityTimer == null) {
           _proximityTimer = Timer(Duration(seconds: 20), () {
             _showParkingAlert(userPosition); // Pass user position to the alert

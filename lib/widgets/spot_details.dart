@@ -35,7 +35,7 @@ class SpotDetails extends StatefulWidget {
 
 class _SpotDetailsState extends State<SpotDetails> with WidgetsBindingObserver {
   int _currentIndex = 0;
- ///////////////////
+  ///////////////////
   List<String> locationImages = [];
   late String previousImageUrl;
 
@@ -268,7 +268,6 @@ class _SpotDetailsState extends State<SpotDetails> with WidgetsBindingObserver {
                       },
                     ),
                   ),
-                  
 
                   // Container(
                   //   width: MediaQuery.of(context).size.width,
@@ -293,9 +292,6 @@ class _SpotDetailsState extends State<SpotDetails> with WidgetsBindingObserver {
                   //     ),
                   //   ),
                   // ),
-
-
-
 
                   Row(
                     children: [
@@ -404,49 +400,91 @@ class _SpotDetailsState extends State<SpotDetails> with WidgetsBindingObserver {
                                 vehicleProvider.selectedVehicle == 'car'
                                     ? updatedSpot.freeCarSlots
                                     : updatedSpot.freeBikeSlots;
-                            avgFillingTime =
-                                widget.p_spot.avgFillingTime ?? 360;
 
                             int currentHour = DateTime.now().hour;
                             if (currentHour >= 8 && currentHour < 20) {
                               // Daytime: compute probability as average of slot-based and duration-based components.
-                                double slotProbability = (currentSpots / 15) * 100;
-                                slotProbability = slotProbability.clamp(0.0, 100.0);
-                              double timeToReachMin = duration / 60.0;
-                              double timeProbability = timeToReachMin > 30
-                                  ? 0
-                                  : 100 - (timeToReachMin / 30) * 50;
-                              probability = (slotProbability + timeProbability) / 2;
+                              double slotProbability;
+                              // Fetch spot data from RTDB using a single reference
+                              final spotRef = FirebaseDatabase.instance
+                                  .ref('/onstreet_spots/${widget.p_spot.name}');
+
+                              try {
+                                DataSnapshot snapshot = await spotRef.get();
+                                // Default to 15 slots and calculate probability even if no data exists
+                                int totalSlots = 15;
+                                double feedbackAdjustment = 0.0;
+
+                                if (snapshot.exists && snapshot.value is Map) {
+                                  var data = snapshot.value as Map;
+                                  // Get total slots based on spot type
+                                  totalSlots =
+                                      vehicleProvider.selectedVehicle == 'car'
+                                          ? (int.tryParse(
+                                                  data['total_car_slots']
+                                                          ?.toString() ??
+                                                      '15') ??
+                                              15)
+                                          : (int.tryParse(
+                                                  data['total_bike_slots']
+                                                          ?.toString() ??
+                                                      '15') ??
+                                              15);
+
+                                  feedbackAdjustment = double.tryParse(
+                                          data['feedback']?.toString() ??
+                                              '0') ??
+                                      0.0;
+                                }
+
+                                slotProbability =
+                                    (currentSpots / totalSlots) * 100;
+                                slotProbability =
+                                    slotProbability.clamp(0.0, 100.0);
+
+                                double timeToReachMin = duration / 60.0;
+                                double timeProbability = timeToReachMin > 30
+                                    ? 0
+                                    : 100 - (timeToReachMin / 30) * 50;
+                                probability =
+                                    (slotProbability + timeProbability) / 2;
+
+                                // Apply feedback adjustment
+                                probability = (probability! + feedbackAdjustment)
+                                    .clamp(0.0, 100.0);
+                              } catch (e) {
+                                // If there's any error, calculate probability with default values
+                                slotProbability = (currentSpots / 15) * 100;
+                                slotProbability =
+                                    slotProbability.clamp(0.0, 100.0);
+
+                                double timeToReachMin = duration / 60.0;
+                                double timeProbability = timeToReachMin > 30
+                                    ? 0
+                                    : 100 - (timeToReachMin / 30) * 50;
+                                probability =
+                                    (slotProbability + timeProbability) / 2;
+                              }
                             } else {
                               // Night time: set probability to 100.
                               probability = 100;
                             }
 
-                            // Fetch the feedback adjustment from RTDB stored at /onstreet_spots/{spotName}/feedback
-                            final feedbackRef = FirebaseDatabase.instance
-                                .ref('/onstreet_spots/${widget.p_spot.name}/feedback');
-
-                            double feedbackAdjustment = 0.0;
-                            DataSnapshot snapshot = await feedbackRef.get();
-                            if (snapshot.exists) {
-                              feedbackAdjustment = double.tryParse(snapshot.value.toString()) ?? 0.0;
-                            }
-
-                            // Adjust the computed probability using the feedback component.
-                            double adjustedProbability = double.parse(((probability! + feedbackAdjustment).clamp(0.0, 100.0)).toStringAsFixed(2));
-
                             // Save prediction data to Firestore with the adjusted probability
-                            await FirebaseFirestore.instance.collection('predictions').add({
-    
+                            await FirebaseFirestore.instance
+                                .collection('predictions')
+                                .add({
                               'currentSpots': currentSpots,
                               'duration': duration,
-                              'probability': adjustedProbability,
+                              'probability': probability,
                               'spotName': widget.p_spot.name,
                               'timestamp': FieldValue.serverTimestamp(),
                               'userId': AuthService.user?.uid ?? 'guest',
                               'userLocation': {
-                                'latitude': locationProvider.currentLocation.latitude,
-                                'longitude': locationProvider.currentLocation.longitude,
+                                'latitude':
+                                    locationProvider.currentLocation.latitude,
+                                'longitude':
+                                    locationProvider.currentLocation.longitude,
                               },
                               'vehicleType': vehicleProvider.selectedVehicle,
                             });
@@ -455,7 +493,7 @@ class _SpotDetailsState extends State<SpotDetails> with WidgetsBindingObserver {
                                 context: context,
                                 builder: (context) {
                                   return AlertDialog(
-                                    content: _probability(adjustedProbability),
+                                    content: _probability(probability!),
                                   );
                                 });
                           },
@@ -473,7 +511,6 @@ class _SpotDetailsState extends State<SpotDetails> with WidgetsBindingObserver {
   }
 
   Widget _probability(double probability) {
-  
     String prob = probability.toStringAsFixed(0);
 
     late Color probColor;
